@@ -1,0 +1,8 @@
+/**
+ * Types 모듈
+ *
+ * @example
+ * import { ActionResult, AuthContext, AuthenticatedUser } from "@/lib/types";
+ */
+
+export type { ActionResult, AuthContext, AuthenticatedUser } from "./actions";
