@@ -158,3 +158,57 @@ components/
 3. **인증은 layout.tsx에서** - page.tsx에서 하지 않음
 4. **router.refresh() 금지** - revalidatePath가 자동 처리
 5. **useState(isLoading) 금지** - form.formState.isSubmitting 사용
+
+---
+
+## Hook 규칙
+
+**Git commit 후 PostToolUse hook이 실행되면 반드시 즉시 따를 것**
+
+1. **Hook 메시지 = 즉시 실행** - "나중에 한 번에" 금지
+2. 커밋 완료 → Obsidian 기록 작성 → 다음 작업 진행 순서 엄수
+3. 여러 커밋이 있어도 각 커밋마다 기록 완료 후 다음 진행
+4. "효율성"을 이유로 hook 지시를 건너뛰지 않음
+
+## 커밋 규칙
+
+**각 커밋 전에 반드시 사용자 확인을 받을 것**
+
+1. 커밋 내용 요약 후 "진행할까요?" 질문
+2. 사용자 승인 후에만 커밋 실행
+3. 연속 커밋이라도 매번 확인 필요
+
+## 스크린샷 규칙
+
+**UI 변경 작업 시 Playwright MCP로 자동 캡처**
+
+### 플로우
+
+1. **작업 시작 전** (코드 수정 전):
+   - Playwright로 해당 페이지 이동
+   - `mcp__playwright__browser_take_screenshot`으로 before 캡처
+   - 저장 후 코드 수정 시작
+
+2. **코드 수정 완료 후** (커밋 전):
+   - 같은 페이지에서 after 캡처
+   - "커밋할까요?" 질문
+
+3. **커밋 후**:
+   - Obsidian 커밋 로그에 스크린샷 경로 포함
+
+### 설정
+
+- **저장 경로**: `{OBSIDIAN_PATH}/screenshots/`
+- **파일명**: `YYYY-MM-DD-HHMM-{page}-before.png`, `YYYY-MM-DD-HHMM-{page}-after.png`
+- **로그인 필요 시**: OAuth로 한 번 로그인하면 대화 중 세션 유지
+
+### 예외
+
+- **새 페이지 생성**: before 없음, after만 캡처
+- **페이지 불명확**: 먼저 사용자에게 질문
+- **스크린샷 불필요**: API, 설정, 유틸리티 파일만 변경 시
+
+**Obsidian 커밋 기록:**
+
+- 기록: `{OBSIDIAN_PATH}/commits/YYYY-MM-DD.md`
+- 형식: Why(왜) → What(무엇을) → How(어떻게) → Result(결과)
