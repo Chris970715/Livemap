@@ -65,13 +65,19 @@ router.refresh(); // Server Action이 revalidatePath 호출하므로 불필요
 
 ### 2. 캐시 무효화 패턴 (Cache Invalidation)
 
-**데이터 변경 시 모든 관련 태그 무효화**
+**계층적 데이터 변경 시 모든 관련 태그 무효화**
 
 ```typescript
-// Item 변경 시
+// Item 변경 시 (관련된 모든 태그)
 updateTag(CACHE_TAGS.ITEMS);
 updateTag(CACHE_TAGS.ITEM(id));
 updateTag(CACHE_TAGS.USER_ITEMS(ctx.user.id));
+
+// 부모-자식 관계가 있는 경우 (예: Course > Section > Lecture)
+// 자식 변경 시 부모 태그도 무효화
+updateTag(CACHE_TAGS.LECTURES(sectionId));
+updateTag(CACHE_TAGS.SECTIONS(courseId));
+updateTag(CACHE_TAGS.COURSE(courseId));
 ```
 
 **참조 파일**: `app/actions/items/mutations.ts`
@@ -202,11 +208,30 @@ components/
 - **파일명**: `YYYY-MM-DD-HHMM-{page}-before.png`, `YYYY-MM-DD-HHMM-{page}-after.png`
 - **로그인 필요 시**: OAuth로 한 번 로그인하면 대화 중 세션 유지
 
-### 예외
+### 예외 (스크린샷 불필요)
 
 - **새 페이지 생성**: before 없음, after만 캡처
 - **페이지 불명확**: 먼저 사용자에게 질문
 - **스크린샷 불필요**: API, 설정, 유틸리티 파일만 변경 시
+
+### 예외 아님 (반드시 스크린샷 필요)
+
+다음 핑계는 인정하지 않음:
+
+- ❌ "데이터 의존적" → 테스트 데이터가 있는 상태에서 캡처
+- ❌ "추후 확인 필요" → 지금 당장 확인
+- ❌ "모바일 뷰 확인 필요" → 브라우저 리사이즈로 즉시 확인
+
+### 커밋 전 체크리스트 (UI 변경 시)
+
+```
+커밋 전 필수 확인:
+1. [ ] 개발 서버에서 해당 페이지 열기
+2. [ ] before 스크린샷 캡처 (첫 커밋이면 생략)
+3. [ ] after 스크린샷 캡처
+4. [ ] 사용자에게 "커밋할까요?" 확인
+5. [ ] 커밋 후 Obsidian 로그에 스크린샷 경로 포함
+```
 
 **Obsidian 커밋 기록:**
 
