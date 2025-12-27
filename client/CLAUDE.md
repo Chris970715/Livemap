@@ -204,7 +204,11 @@ components/
 
 ### 설정
 
-- **저장 경로**: `{OBSIDIAN_PATH}/screenshots/`
+- **경로는 .env에서 자동 로드** (post-commit.sh hook이 처리)
+  - `OBSIDIAN_VAULT_PATH` - Obsidian vault 경로 (기본: ~/Desktop/obsidian)
+  - `PROJECT_NAME` - 프로젝트 이름 (기본: my-project)
+- **스크린샷**: `{OBSIDIAN_VAULT_PATH}/work/projects/{PROJECT_NAME}/screenshots/`
+- **커밋 로그**: `{OBSIDIAN_VAULT_PATH}/work/projects/{PROJECT_NAME}/commits/`
 - **파일명**: `YYYY-MM-DD-HHMM-{page}-before.png`, `YYYY-MM-DD-HHMM-{page}-after.png`
 - **로그인 필요 시**: OAuth로 한 번 로그인하면 대화 중 세션 유지
 
@@ -235,5 +239,17 @@ components/
 
 **Obsidian 커밋 기록:**
 
-- 기록: `{OBSIDIAN_PATH}/commits/YYYY-MM-DD.md`
+- 기록: `{OBSIDIAN_VAULT_PATH}/work/projects/{PROJECT_NAME}/commits/YYYY-MM-DD.md`
+- 템플릿: `{OBSIDIAN_VAULT_PATH}/work/templates/commit-log.md`
 - 형식: Why(왜) → What(무엇을) → How(어떻게) → Result(결과)
+
+---
+
+## 프로젝트 시작 시 설정
+
+1. `.env.example`을 `.env`로 복사
+2. `OBSIDIAN_VAULT_PATH`와 `PROJECT_NAME` 설정
+3. Obsidian에 프로젝트 폴더 생성:
+   ```bash
+   mkdir -p {OBSIDIAN_VAULT_PATH}/work/projects/{PROJECT_NAME}/{commits,screenshots}
+   ```
