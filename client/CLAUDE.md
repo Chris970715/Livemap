@@ -16,7 +16,7 @@ npm run lint:fix         # ESLint + Prettier 자동 수정
 
 - **Framework**: Next.js 16 (App Router), React 19, React Compiler
 - **Styling**: Tailwind CSS v4, shadcn/ui
-- **Auth**: NextAuth v5 + Google/Discord OAuth
+- **Auth**: NextAuth v5 + Google/Discord/Kakao OAuth
 - **Database**: Prisma 7 + PostgreSQL
 - **Forms**: React Hook Form + Zod
 - **Monitoring**: Sentry

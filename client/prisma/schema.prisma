@@ -11,6 +11,15 @@ datasource db {
 }
 
 // ===========================================
+// Enums
+// ===========================================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ===========================================
 // NextAuth.js Adapter Models
 // ===========================================
 
@@ -52,6 +61,7 @@ model User {
   emailVerified  DateTime? @map("email_verified")
   hashedPassword String?   @map("hashed_password")
   image          String?
+  role           Role      @default(USER)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 

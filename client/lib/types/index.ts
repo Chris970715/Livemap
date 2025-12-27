@@ -6,3 +6,4 @@
  */
 
 export type { ActionResult, AuthContext, AuthenticatedUser } from "./actions";
+export type { FileValidation, UploadStatus, UploadState, UploadOptions } from "./media";

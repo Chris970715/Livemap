@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   // React compiler (Next.js 16)
   reactCompiler: true,
 
+  // Experimental features
+  experimental: {
+    proxyClientMaxBodySize: "3gb", // 대용량 파일 업로드 지원
+  },
+
   // Image optimization
   images: {
     remotePatterns: [
@@ -16,6 +21,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "cdn.discordapp.com", // Discord OAuth
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "k.kakaocdn.net", // Kakao OAuth
         pathname: "/**",
       },
     ],

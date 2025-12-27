@@ -17,3 +17,4 @@ export {
   type CreateItemFormValues,
   type UpdateItemFormValues,
 } from "./item";
+export { videoFileSchema, imageFileSchema, validateVideoFile, validateImageFile } from "./media";
