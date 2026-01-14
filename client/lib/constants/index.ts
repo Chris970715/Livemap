@@ -15,3 +15,5 @@ export {
   ACCEPTED_IMAGE_MIME_TYPES,
   MAX_IMAGE_FILE_SIZE,
 } from "./media";
+export { SECURITY_CATEGORIES } from "./categories";
+export type { SecurityCategoryKey, WarSubCategory, SecuritySubCategory } from "./categories";
