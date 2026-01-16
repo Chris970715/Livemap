@@ -16,6 +16,7 @@ export async function signInWithCredentials(formData: FormData): Promise<ActionR
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
+    // 이메일 또는 비밀번호가 필요합니다.
     const validation = signInSchema.safeParse({ email, password });
     if (!validation.success) {
       return { error: validation.error.issues[0]?.message ?? ERROR_MESSAGES.INVALID_INPUT };
