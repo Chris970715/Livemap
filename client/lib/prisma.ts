@@ -1,9 +1,23 @@
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
+/**
+ * Get the database connection URL.
+ *
+ * Priority (same as prisma.config.ts for consistency):
+ * 1. SESSION_POOLER_URL - Session pooler (recommended for Supabase)
+ * 2. DIRECT_URL - Direct connection (often blocked on free tier)
+ * 3. DATABASE_URL - Transaction pooler (fallback)
+ *
+ * This ensures the runtime uses the same database as schema migrations.
+ */
+const getDatabaseUrl = () => {
+  return process.env.SESSION_POOLER_URL || process.env.DIRECT_URL || process.env.DATABASE_URL || "";
+};
+
 const createPrismaClient = () => {
   const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: getDatabaseUrl(),
   });
 
   return new PrismaClient({
