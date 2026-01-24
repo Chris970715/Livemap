@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +36,14 @@ export default function SignInPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <Card className="relative w-full max-w-md">
+        <Link
+          href="/"
+          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="h-6 w-6" />
+          <span className="sr-only">홈으로 돌아가기</span>
+        </Link>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">로그인</CardTitle>
           <CardDescription>계정에 로그인하세요</CardDescription>
