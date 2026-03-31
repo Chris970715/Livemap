@@ -33,8 +33,10 @@ app = FastAPI(
 _cors_origins = [settings.FRONTEND_URL]
 if settings.DEBUG:
     _cors_origins.extend([
-        "http://localhost:3000",  # Next.js dev server
+        "http://localhost:3000",
+        "http://localhost:3010",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3010",
     ])
 
 app.add_middleware(

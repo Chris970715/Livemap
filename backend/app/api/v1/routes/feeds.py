@@ -155,9 +155,38 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
     else:
         status = "pending"
 
+    # Structured article content
+    article_structure = None
+    headline = article.headline_ko or article.headline_en
+    if headline:
+        article_structure = {
+            "headline": headline,
+            "lead": article.lead_ko or article.lead_en or "",
+            "nutGraph": article.nut_graph_ko or article.nut_graph_en,
+            "body": article.body_ko or article.body_en or "",
+        }
+
+    # Related sources
+    related_sources = []
+    if article.related_sources_json:
+        try:
+            raw = json.loads(article.related_sources_json)
+            related_sources = [
+                {
+                    "url": s.get("url", ""),
+                    "title": s.get("title", ""),
+                    "sourceName": s.get("source_name", s.get("sourceName", "")),
+                    "snippet": s.get("snippet", ""),
+                    "credibilityTier": s.get("credibility_tier", s.get("credibilityTier", "tier3")),
+                }
+                for s in raw
+            ]
+        except (json.JSONDecodeError, TypeError):
+            pass
+
     return {
         "id": article.id,
-        "title": article.headline_ko or article.headline_en,
+        "title": headline or "Untitled",
         "content": article.full_text_ko or article.full_text_en,
         "originalLink": original_link,
         "sourceName": "Livemap AI",
@@ -174,6 +203,8 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
         },
         "credibilityScore": credibility,
         "verificationStatus": status,
+        "article": article_structure,
+        "relatedSources": related_sources,
     }
 
 
