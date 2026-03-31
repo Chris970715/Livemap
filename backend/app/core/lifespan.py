@@ -141,6 +141,7 @@ def cleanup_old_logs(keep_days: int = 7):
 async def run_scheduled_scan():
     """Run a single scan cycle and trigger investigations for significant events."""
     from app.agent import ClaimVerificationAgent, NewsScanner
+    from app.agent.geo_mapper import get_location, get_subcategory
     from app.services.article_service import ArticleService
 
     print("\n" + "=" * 60)
@@ -203,6 +204,14 @@ async def run_scheduled_scan():
 
             event_desc = event.get("description") or event.get("title", "Unknown event")
             category = event.get("category", "other")
+            country_code = event.get("country", "")
+
+            # Resolve location from GDELT country code
+            location = get_location(country_code) if country_code else None
+            event_lat = location[0] if location else None
+            event_lng = location[1] if location else None
+            event_loc_name = location[2] if location else None
+            event_subcategory = get_subcategory(country_code) if country_code else None
 
             print(f"\n[SCANNER] [{i+1}] Investigating: {event_desc[:80]}...")
 
@@ -327,6 +336,10 @@ async def run_scheduled_scan():
                                 update_reason=result.get("update_reason"),
                                 existing_event_id=result.get("matched_event_id"),
                                 embedding_generator=embedding_generator,  # Phase 6
+                                location_lat=event_lat,
+                                location_lng=event_lng,
+                                location_name=event_loc_name,
+                                sub_category=event_subcategory,
                             )
                             print(f"[SCANNER] [{i+1}] SAVED: event_id={saved_event.id}, article_id={saved_article.id}")
                             investigation_count += 1

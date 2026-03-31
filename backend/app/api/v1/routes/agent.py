@@ -15,6 +15,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.agent import ClaimVerificationAgent, NewsScanner
+from app.agent.geo_mapper import get_location, get_subcategory
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,6 +29,7 @@ class InvestigateRequest(BaseModel):
 
     topic: str = Field(..., min_length=10, max_length=500, description="Topic to investigate")
     category: str = Field("other", description="Event category (war, protest, terrorism, etc.)")
+    country: str = Field("", description="GDELT FIPS country code for location (e.g., UP=Ukraine, IS=Israel)")
 
 
 class InvestigateResponse(BaseModel):
@@ -81,6 +83,10 @@ async def start_investigation(request: InvestigateRequest):
         "report": None,
     }
 
+    # Resolve location from country code
+    location = get_location(request.country) if request.country else None
+    subcategory = get_subcategory(request.country) if request.country else None
+
     # Run investigation in background using asyncio.create_task
     async def run_investigation():
         try:
@@ -94,6 +100,50 @@ async def start_investigation(request: InvestigateRequest):
             _investigations[investigation_id]["result"] = result  # v3 returns dict
             _investigations[investigation_id]["completed_at"] = datetime.now(timezone.utc).isoformat()
             logger.info(f"Investigation completed: {investigation_id}")
+
+            # Save article to DB if generated
+            article_en = result.get("article_en")
+            if article_en and not result.get("is_duplicate"):
+                try:
+                    from app.core.database import AsyncSessionLocal
+                    from app.services.article_service import ArticleService
+
+                    evidence_docs = result.get("evidence_docs", [])
+                    sources = list({
+                        doc.get("url") or doc.get("source_name", "unknown")
+                        for doc in evidence_docs
+                        if doc.get("url") or doc.get("source_name")
+                    })
+                    verification_result = {
+                        "total_claims": len(result.get("claims", [])),
+                        "supported_count": len(result.get("supported_claims", [])),
+                        "refuted_count": len(result.get("refuted_claims", [])),
+                        "nei_count": len(result.get("unverifiable_claims", [])),
+                        "overall_reliability": result.get("overall_reliability", 0.0),
+                    }
+
+                    async with AsyncSessionLocal() as db:
+                        article_service = ArticleService(db)
+                        saved_event, saved_article = await article_service.save_article(
+                            article_en=article_en,
+                            article_ko=result.get("article_ko") or {"headline": "", "lead": "", "nut_graph": "", "body": "", "full_text": ""},
+                            event_text=request.topic,
+                            embedding=None,
+                            category=request.category,
+                            claims=result.get("claims"),
+                            verification_result=verification_result,
+                            sources=sources,
+                            location_lat=location[0] if location else None,
+                            location_lng=location[1] if location else None,
+                            location_name=location[2] if location else None,
+                            sub_category=subcategory,
+                        )
+                        logger.info(f"Article saved to DB: event_id={saved_event.id}, article_id={saved_article.id}")
+                        _investigations[investigation_id]["saved_event_id"] = saved_event.id
+                        _investigations[investigation_id]["saved_article_id"] = saved_article.id
+                except Exception as save_err:
+                    logger.error(f"Failed to save article to DB: {save_err}")
+
         except Exception as e:
             logger.error(f"Investigation failed: {e}")
             _investigations[investigation_id]["status"] = "failed"

@@ -47,6 +47,11 @@ class Event(Base):
     category: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
     sub_category: Mapped[str | None] = mapped_column(String(50), index=True, nullable=True)
 
+    # Location (for map display)
+    location_lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    location_lng: Mapped[float | None] = mapped_column(Float, nullable=True)
+    location_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     # === Statistics ===
     first_reported_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False

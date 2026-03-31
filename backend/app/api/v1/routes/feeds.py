@@ -1,122 +1,179 @@
 """
-Feed endpoints.
+Feed endpoints — serves articles from the agent pipeline as FeedItem format.
 
-GET /api/v1/feeds - List feeds with filters
-GET /api/v1/feeds/{id} - Get single feed by ID
-POST /api/v1/feeds - Create a new feed (internal use)
+GET /api/v1/feeds - List articles with filters (mapped to FeedItem schema)
+GET /api/v1/feeds/{id} - Get single article by ID
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
+from app.agent.geo_mapper import CLIENT_TO_CATEGORIES, get_client_category
 from app.core.database import get_db
-from app.models.feed import Feed
+from app.models.article import Article
+from app.models.event import Event
 from app.schemas.feed import FeedItem
 
 router = APIRouter()
 
-# Mock data for fallback when DB is empty or unavailable
-MOCK_FEEDS: list[dict] = [
-    {
-        "id": 1,
-        "title": "Russian forces advance in Donetsk region",
-        "content": "Russian military forces have made tactical advances in the Donetsk region, according to multiple sources. Ukrainian forces are reinforcing defensive positions.",
-        "original_link": "https://example.com/news/1",
-        "source_name": "ACLED",
-        "source_type": "API",
-        "published_at": datetime(2026, 1, 10, 10, 0, 0, tzinfo=timezone.utc),
-        "author": "ACLED Research",
-        "category": "WAR",
-        "sub_category": "ru-uk",
-        "location": {"lat": 48.0159, "lng": 37.8028, "name": "Donetsk, Ukraine"},
-        "credibility_score": 95,
-        "verification_status": "verified",
-    },
-    {
-        "id": 2,
-        "title": "Missile strikes reported in Kharkiv",
-        "content": "Multiple missile strikes were reported in Kharkiv city. Emergency services are responding to the incident.",
-        "original_link": "https://example.com/news/2",
-        "source_name": "Telegram Channel",
-        "source_type": "TELEGRAM",
-        "published_at": datetime(2026, 1, 10, 9, 30, 0, tzinfo=timezone.utc),
-        "category": "WAR",
-        "sub_category": "ru-uk",
-        "location": {"lat": 49.9935, "lng": 36.2304, "name": "Kharkiv, Ukraine"},
-        "credibility_score": 75,
-        "verification_status": "partially_verified",
-    },
-    {
-        "id": 3,
-        "title": "Israeli airstrikes in southern Lebanon",
-        "content": "Israeli Defense Forces conducted airstrikes targeting Hezbollah positions in southern Lebanon overnight.",
-        "original_link": "https://example.com/news/3",
-        "source_name": "Reuters",
-        "source_type": "RSS",
-        "published_at": datetime(2026, 1, 10, 8, 0, 0, tzinfo=timezone.utc),
-        "author": "Reuters Staff",
-        "category": "WAR",
-        "sub_category": "is-ir",
-        "location": {"lat": 33.2721, "lng": 35.2033, "name": "Southern Lebanon"},
-        "credibility_score": 90,
-        "verification_status": "verified",
-    },
-    {
-        "id": 4,
-        "title": "North Korea military drill near DMZ",
-        "content": "North Korean military conducted large-scale artillery exercises near the demilitarized zone.",
-        "original_link": "https://example.com/news/4",
-        "source_name": "Yonhap",
-        "source_type": "RSS",
-        "published_at": datetime(2026, 1, 10, 7, 0, 0, tzinfo=timezone.utc),
-        "category": "SECURITY",
-        "sub_category": "KOREA",
-        "location": {"lat": 38.3, "lng": 127.0, "name": "DMZ, Korean Peninsula"},
-        "credibility_score": 85,
-        "verification_status": "verified",
-    },
-    {
-        "id": 5,
-        "title": "US Navy patrol in South China Sea",
-        "content": "A US Navy destroyer conducted a freedom of navigation operation in the South China Sea.",
-        "original_link": "https://example.com/news/5",
-        "source_name": "US Navy",
-        "source_type": "RSS",
-        "published_at": datetime(2026, 1, 10, 6, 0, 0, tzinfo=timezone.utc),
-        "category": "SECURITY",
-        "sub_category": "CHINA",
-        "location": {"lat": 15.0, "lng": 114.0, "name": "South China Sea"},
-        "credibility_score": 95,
-        "verification_status": "verified",
-    },
-]
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
-def _feed_to_response(feed: Feed) -> dict:
-    """Convert Feed model to response dict."""
-    return {
-        "id": feed.id,
-        "title": feed.title,
-        "content": feed.content,
-        "original_link": feed.original_link,
-        "source_name": feed.source_name,
-        "source_type": feed.source_type,
-        "published_at": feed.published_at,
-        "author": feed.author,
-        "thumbnail": feed.thumbnail,
-        "category": feed.category,
-        "sub_category": feed.sub_category,
-        "location": {
-            "lat": feed.location_lat,
-            "lng": feed.location_lng,
-            "name": feed.location_name,
+def _get_mock_feeds() -> list[dict]:
+    """Generate mock feeds with current timestamps."""
+    now = _now()
+    return [
+        {
+            "id": 1,
+            "title": "우크라이나 동부 도네츠크 전선에서 러시아군 전술적 전진",
+            "content": "러시아군이 도네츠크 지역에서 전술적 전진을 이루었다고 복수의 소식통이 전했다. 우크라이나군은 방어 진지를 강화하고 있으며, 포카로프스크 방향으로의 공세가 계속되고 있다. ACLED 데이터에 따르면 지난 24시간 동안 해당 지역에서 47건의 교전이 보고되었다.",
+            "originalLink": "https://www.reuters.com/world/europe/",
+            "sourceName": "Reuters",
+            "sourceType": "RSS",
+            "publishedAt": now - timedelta(hours=1, minutes=23),
+            "author": "Reuters Staff",
+            "thumbnail": "https://images.unsplash.com/photo-1569025743873-ea3a9ber4f79?w=400&h=300&fit=crop",
+            "category": "WAR",
+            "subCategory": "ru-uk",
+            "location": {"lat": 48.0159, "lng": 37.8028, "name": "Donetsk, Ukraine"},
+            "credibilityScore": 95,
+            "verificationStatus": "verified",
         },
-        "credibility_score": feed.credibility_score,
-        "verification_status": feed.verification_status,
+        {
+            "id": 2,
+            "title": "하르키우시에 미사일 공격, 민간인 피해 발생",
+            "content": "하르키우시에 다수의 미사일 공격이 보고되었다. 긴급 구조대가 현장에 출동했으며, 주거 지역에 피해가 발생한 것으로 확인됐다. 우크라이나 공군은 S-300 미사일 2발이 발사되었다고 밝혔다.",
+            "originalLink": "https://t.me/truexanewsua",
+            "sourceName": "Telegram",
+            "sourceType": "TELEGRAM",
+            "publishedAt": now - timedelta(hours=2, minutes=45),
+            "author": None,
+            "thumbnail": None,
+            "category": "WAR",
+            "subCategory": "ru-uk",
+            "location": {"lat": 49.9935, "lng": 36.2304, "name": "Kharkiv, Ukraine"},
+            "credibilityScore": 75,
+            "verificationStatus": "partially_verified",
+        },
+        {
+            "id": 3,
+            "title": "이스라엘군, 레바논 남부 헤즈볼라 거점 공습",
+            "content": "이스라엘 방위군(IDF)이 레바논 남부의 헤즈볼라 거점을 대상으로 공습을 실시했다. IDF 대변인은 무기 저장소와 발사대를 목표로 한 정밀 타격이었다고 발표했다. 레바논 당국은 민간인 피해 여부를 조사 중이다.",
+            "originalLink": "https://www.aljazeera.com/news/",
+            "sourceName": "Al Jazeera",
+            "sourceType": "RSS",
+            "publishedAt": now - timedelta(hours=3, minutes=10),
+            "author": "Al Jazeera Staff",
+            "thumbnail": None,
+            "category": "WAR",
+            "subCategory": "is-ir",
+            "location": {"lat": 33.2721, "lng": 35.2033, "name": "Southern Lebanon"},
+            "credibilityScore": 90,
+            "verificationStatus": "verified",
+        },
+        {
+            "id": 4,
+            "title": "북한, DMZ 인근에서 대규모 포병 훈련 실시",
+            "content": "북한군이 비무장지대(DMZ) 인근에서 대규모 포병 훈련을 실시했다. 한국 합참은 북한의 군사 활동을 면밀히 감시하고 있다고 밝혔다. 훈련은 약 3시간 동안 진행된 것으로 파악된다.",
+            "originalLink": "https://en.yna.co.kr/",
+            "sourceName": "Yonhap",
+            "sourceType": "RSS",
+            "publishedAt": now - timedelta(hours=5, minutes=30),
+            "author": None,
+            "thumbnail": None,
+            "category": "SECURITY",
+            "subCategory": "KOREA",
+            "location": {"lat": 38.3, "lng": 127.0, "name": "DMZ, Korean Peninsula"},
+            "credibilityScore": 85,
+            "verificationStatus": "verified",
+        },
+        {
+            "id": 5,
+            "title": "미 해군 구축함, 남중국해 항행의 자유 작전 실시",
+            "content": "미 해군 알레이 버크급 구축함이 남중국해에서 항행의 자유 작전(FONOP)을 실시했다. 중국 외교부는 이를 '도발 행위'로 규정하며 강력히 항의했다. 미 태평양함대 사령부는 국제법에 따른 정상적인 작전이라고 밝혔다.",
+            "originalLink": "https://www.navy.mil/",
+            "sourceName": "US Navy",
+            "sourceType": "RSS",
+            "publishedAt": now - timedelta(hours=7),
+            "author": None,
+            "thumbnail": None,
+            "category": "SECURITY",
+            "subCategory": "CHINA",
+            "location": {"lat": 15.0, "lng": 114.0, "name": "South China Sea"},
+            "credibilityScore": 95,
+            "verificationStatus": "verified",
+        },
+    ]
+
+
+# Unsplash source images by sub-category (free, no auth needed)
+_THUMBNAIL_MAP = {
+    "ru-uk": "https://images.unsplash.com/photo-1589519160732-57fc498494f8?w=400&h=250&fit=crop",
+    "is-ir": "https://images.unsplash.com/photo-1590073844006-33379778ae09?w=400&h=250&fit=crop",
+    "KOREA": "https://images.unsplash.com/photo-1517154421773-0529f29ea451?w=400&h=250&fit=crop",
+    "CHINA": "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&h=250&fit=crop",
+    "US": "https://images.unsplash.com/photo-1461696114087-397271a7aedc?w=400&h=250&fit=crop",
+    "JAPAN": "https://images.unsplash.com/photo-1480796927426-f609979314bd?w=400&h=250&fit=crop",
+}
+_DEFAULT_THUMBNAIL = "https://images.unsplash.com/photo-1504711434969-e33886168d6c?w=400&h=250&fit=crop"
+
+
+def _article_to_feed_response(article: Article, event: Event) -> dict:
+    """Convert Article+Event to FeedItem response dict."""
+    import json
+
+    # Extract first source URL from sources_json
+    original_link = None
+    if article.sources_json:
+        sources = json.loads(article.sources_json)
+        original_link = sources[0] if sources else None
+
+    # Thumbnail based on sub-category
+    thumbnail = _THUMBNAIL_MAP.get(event.sub_category, _DEFAULT_THUMBNAIL)
+
+    # Map backend category to client category
+    client_category = get_client_category(event.category)
+
+    # Credibility score from verification (0.0-1.0 → 0-100)
+    credibility = int(article.verification_score * 100) if article.verification_score else None
+
+    # Verification status
+    if article.claims_verified and article.claims_total:
+        ratio = article.claims_verified / article.claims_total
+        if ratio >= 0.8:
+            status = "verified"
+        elif ratio >= 0.5:
+            status = "partially_verified"
+        else:
+            status = "unverified"
+    else:
+        status = "pending"
+
+    return {
+        "id": article.id,
+        "title": article.headline_ko or article.headline_en,
+        "content": article.full_text_ko or article.full_text_en,
+        "originalLink": original_link,
+        "sourceName": "Livemap AI",
+        "sourceType": "AI",
+        "publishedAt": article.published_at,
+        "author": None,
+        "thumbnail": thumbnail,
+        "category": client_category,
+        "subCategory": event.sub_category or "other",
+        "location": {
+            "lat": event.location_lat,
+            "lng": event.location_lng,
+            "name": event.location_name,
+        },
+        "credibilityScore": credibility,
+        "verificationStatus": status,
     }
 
 
@@ -131,41 +188,66 @@ async def get_feeds(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Get list of verified news feeds.
+    Get list of verified news articles as feed items.
 
-    Filters:
-    - **category** (required): WAR or SECURITY
-    - **subCategory** (optional): ru-uk, is-ir, KOREA, CHINA, etc.
-    - **limit**: Max items to return (default 20, max 100)
-    - **offset**: Items to skip for pagination
+    Queries the events+articles tables (from the agent pipeline).
+    Falls back to mock data when DB is empty.
     """
     try:
-        # Build query
-        query = select(Feed).where(Feed.category == category)
+        # Map client category to backend categories
+        backend_cats = CLIENT_TO_CATEGORIES.get(category, [category.lower()])
+
+        # Query articles joined with events
+        query = (
+            select(Article, Event)
+            .join(Event, Article.event_id == Event.id)
+            .where(Event.category.in_(backend_cats))
+            .where(Article.status == "published")
+            .where(Event.location_lat.isnot(None))  # Only items with location
+            .order_by(Article.published_at.desc())
+        )
 
         if subCategory:
-            query = query.where(Feed.sub_category == subCategory)
+            query = query.where(Event.sub_category == subCategory)
 
-        query = query.order_by(Feed.published_at.desc()).offset(offset).limit(limit)
+        query = query.offset(offset).limit(limit)
 
-        # Execute query
         result = await db.execute(query)
-        feeds = result.scalars().all()
+        rows = result.all()
+
+        if rows:
+            return [_article_to_feed_response(article, event) for article, event in rows]
+
+        # Fallback: try without location filter
+        query_no_loc = (
+            select(Article, Event)
+            .join(Event, Article.event_id == Event.id)
+            .where(Event.category.in_(backend_cats))
+            .where(Article.status == "published")
+            .order_by(Article.published_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        if subCategory:
+            query_no_loc = query_no_loc.where(Event.sub_category == subCategory)
+
+        result = await db.execute(query_no_loc)
+        rows = result.all()
+
+        if rows:
+            return [_article_to_feed_response(article, event) for article, event in rows]
 
         # If DB is empty, return mock data
-        if not feeds:
-            filtered = [f for f in MOCK_FEEDS if f["category"] == category]
-            if subCategory:
-                filtered = [f for f in filtered if f["sub_category"] == subCategory]
-            return filtered[offset : offset + limit]
-
-        return [_feed_to_response(feed) for feed in feeds]
+        filtered = [f for f in _get_mock_feeds() if f["category"] == category]
+        if subCategory:
+            filtered = [f for f in filtered if f["subCategory"] == subCategory]
+        return filtered[offset : offset + limit]
 
     except Exception:
         # Fallback to mock data if DB error
-        filtered = [f for f in MOCK_FEEDS if f["category"] == category]
+        filtered = [f for f in _get_mock_feeds() if f["category"] == category]
         if subCategory:
-            filtered = [f for f in filtered if f["sub_category"] == subCategory]
+            filtered = [f for f in filtered if f["subCategory"] == subCategory]
         return filtered[offset : offset + limit]
 
 
@@ -174,30 +256,30 @@ async def get_feed(
     feed_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Get a single feed item by ID.
-
-    - **feed_id**: The unique identifier of the feed item
-    """
+    """Get a single article by ID."""
     try:
-        result = await db.execute(select(Feed).where(Feed.id == feed_id))
-        feed = result.scalar_one_or_none()
+        result = await db.execute(
+            select(Article, Event)
+            .join(Event, Article.event_id == Event.id)
+            .where(Article.id == feed_id)
+        )
+        row = result.first()
 
-        if feed:
-            return _feed_to_response(feed)
+        if row:
+            article, event = row
+            return _article_to_feed_response(article, event)
 
-        # Fallback to mock data
-        for mock_feed in MOCK_FEEDS:
-            if mock_feed["id"] == feed_id:
-                return mock_feed
+        # Fallback to mock
+        for mock in _get_mock_feeds():
+            if mock["id"] == feed_id:
+                return mock
 
         raise HTTPException(status_code=404, detail=f"Feed with id {feed_id} not found")
 
     except HTTPException:
         raise
     except Exception:
-        # Fallback to mock data
-        for mock_feed in MOCK_FEEDS:
-            if mock_feed["id"] == feed_id:
-                return mock_feed
+        for mock in _get_mock_feeds():
+            if mock["id"] == feed_id:
+                return mock
         raise HTTPException(status_code=404, detail=f"Feed with id {feed_id} not found")

@@ -8,9 +8,10 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * 상대 시간 포맷 (예: "방금 전", "3시간 전")
  */
-export function formatTimeAgo(date: Date): string {
+export function formatTimeAgo(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
+  const diffMs = now.getTime() - d.getTime();
   const diffMin = Math.floor(diffMs / 60000);
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
@@ -20,5 +21,5 @@ export function formatTimeAgo(date: Date): string {
   if (diffHour < 24) return `${diffHour}시간 전`;
   if (diffDay < 7) return `${diffDay}일 전`;
 
-  return date.toLocaleDateString("ko-KR");
+  return d.toLocaleDateString("ko-KR");
 }

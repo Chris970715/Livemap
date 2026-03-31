@@ -8,7 +8,7 @@ import type { FeedItem } from "@/lib/types/feed";
 export const securityCategoryAtom = atom<"전쟁" | "안보">("전쟁");
 
 // 서브카테고리 상태
-export const securitySubCategoryAtom = atom<string>("ru-uk");
+export const securitySubCategoryAtom = atom<string>("");
 
 // 지도 중심 좌표
 export const mapCenterAtom = atom<[number, number]>([50.0, 30.0]);

@@ -149,6 +149,10 @@ class ArticleService:
         update_reason: str | None = None,
         existing_event_id: int | None = None,
         embedding_generator: Callable[[str], list[float] | None] | None = None,
+        location_lat: float | None = None,
+        location_lng: float | None = None,
+        location_name: str | None = None,
+        sub_category: str | None = None,
     ) -> tuple[Event, Article]:
         """
         Save event and bilingual article to database.
@@ -274,6 +278,10 @@ class ArticleService:
                 key_facts=json.dumps(key_facts) if key_facts else None,
                 fact_hash=fact_hash,
                 category=category,
+                sub_category=sub_category,
+                location_lat=location_lat,
+                location_lng=location_lng,
+                location_name=location_name,
                 first_reported_at=now,
                 last_updated_at=now,
                 article_count=1,

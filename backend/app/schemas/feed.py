@@ -1,7 +1,7 @@
 """
 Feed schemas matching frontend FeedItem interface.
 
-Reference: client/src/app/security/data/feedData.ts
+Uses camelCase field names to match the frontend TypeScript types directly.
 """
 
 from datetime import datetime
@@ -20,36 +20,27 @@ class LocationSchema(BaseModel):
 
 class FeedItem(BaseModel):
     """
-    Feed item schema matching frontend interface.
+    Feed item schema matching frontend FeedItem interface.
 
-    Categories:
-    - WAR: Active conflict events
-    - SECURITY: Security-related events
-
-    SubCategories:
-    - ru-uk: Russia-Ukraine
-    - is-ir: Israel-Iran
-    - US, KOREA, CHINA, JAPAN, etc.
+    All field names use camelCase to match the frontend TypeScript types.
     """
 
     id: int
     title: str = Field(..., max_length=500)
     content: str
-    originalLink: Optional[str] = Field(None, alias="original_link")
-    sourceName: str = Field(..., alias="source_name")
-    sourceType: str = Field(..., alias="source_type")  # RSS, TELEGRAM, etc.
-    publishedAt: datetime = Field(..., alias="published_at")
+    originalLink: Optional[str] = None
+    sourceName: str
+    sourceType: str  # RSS, TELEGRAM, API, AI
+    publishedAt: datetime
     author: Optional[str] = None
     thumbnail: Optional[str] = None
     category: Literal["WAR", "SECURITY"]
-    subCategory: str = Field(..., alias="sub_category")
+    subCategory: str
     location: LocationSchema
 
-    # Verification fields (added by pipeline)
-    credibilityScore: Optional[int] = Field(
-        None, alias="credibility_score", ge=0, le=100
-    )
-    verificationStatus: Optional[str] = Field(None, alias="verification_status")
+    # Verification fields
+    credibilityScore: Optional[int] = Field(None, ge=0, le=100)
+    verificationStatus: Optional[str] = None
 
     model_config = ConfigDict(
         populate_by_name=True,

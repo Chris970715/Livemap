@@ -36,11 +36,11 @@ export function SecurityInteractive() {
   // 카테고리 변경 시 기본 서브카테고리/센터 설정
   useEffect(() => {
     if (category === "전쟁") {
-      setSubCategory("ru-uk");
-      setMapCenter([50.0, 30.0]);
+      setSubCategory("");
+      setMapCenter([30.0, 40.0]);
     } else {
-      setSubCategory("KOREA");
-      setMapCenter([36.5, 127.5]);
+      setSubCategory("");
+      setMapCenter([30.0, 100.0]);
     }
   }, [category, setMapCenter, setSubCategory]);
 

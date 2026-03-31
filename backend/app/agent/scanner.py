@@ -1358,6 +1358,7 @@ class MultiSourceScanner:
             result_item = {
                 "description": event.title,
                 "category": category,
+                "country": event.country,
                 "sources": sources,
                 "source_count": item["cluster_size"],
                 "trigger_source": event.source.value,

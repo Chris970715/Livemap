@@ -67,9 +67,26 @@ export function SecuritySubCategoryFilter() {
 
   const subCategories = securityCategory === "전쟁" ? warSubCategories : securitySubCategories;
 
+  const allCenter: [number, number] = securityCategory === "전쟁" ? [30.0, 40.0] : [30.0, 100.0];
+
   return (
     <div className="flex justify-start mb-4">
       <div className="flex gap-2">
+        {/* 전체 보기 */}
+        <div
+          className={`px-3 py-1 rounded-full cursor-pointer transition-all duration-200 text-xs ${
+            selectedSubCategory === ""
+              ? "text-white"
+              : "text-gray-400 hover:text-white"
+          }`}
+          style={{
+            border: "1px solid #374151",
+            backgroundColor: selectedSubCategory === "" ? "#374151" : "transparent",
+          }}
+          onClick={() => handleSubCategoryClick("", allCenter)}
+        >
+          전체
+        </div>
         {subCategories.map((subCategory) => (
           <div
             key={subCategory.id}
