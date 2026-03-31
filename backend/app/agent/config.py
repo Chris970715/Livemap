@@ -35,7 +35,7 @@ class AgentSettings(BaseSettings):
 
     # GDELT (뉴스) - 인증 불필요
     gdelt_enabled: bool = True
-    gdelt_timespan: str = "30min"  # 검색 기간 (30분, 15분 스캔에 최적화)
+    gdelt_timespan: str = "60min"  # 검색 기간 (60분 — GDELT API가 30min을 거부하므로 확장)
 
 
     # X/Twitter (Twikit) - 개인계정 필요

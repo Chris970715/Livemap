@@ -69,7 +69,7 @@ TIER_1_DOMAINS: Set[str] = {
 # =============================================================================
 
 TIER_2_DOMAINS: Set[str] = {
-    # ---- United States (8) ----
+    # ---- United States (16) ----
     "nytimes.com",
     "washingtonpost.com",
     "wsj.com",
@@ -78,6 +78,14 @@ TIER_2_DOMAINS: Set[str] = {
     "bloomberg.com",
     "politico.com",
     "axios.com",
+    "usatoday.com",
+    "nbcnews.com",
+    "cbsnews.com",
+    "abcnews.go.com",
+    "foxnews.com",
+    "pbs.org",
+    "voanews.com",
+    "usnews.com",
 
     # ---- United Kingdom (7) ----
     "bbc.com",
@@ -132,6 +140,29 @@ TIER_2_DOMAINS: Set[str] = {
     "foreignpolicy.com",
     "theatlantic.com",
     "newyorker.com",
+
+    # ---- Aggregators (return wire service content) ----
+    "msn.com",
+    "yahoo.com",
+    "news.yahoo.com",
+
+    # ---- Ukraine/Russia specific (common in GDELT) ----
+    "ukrinform.net",
+    "kyivindependent.com",
+    "pravda.com.ua",
+    "tass.com",
+    "rferl.org",
+
+    # ---- Middle East specific ----
+    "middleeasteye.net",
+    "i24news.tv",
+    "iranintl.com",
+
+    # ---- Defense / Security ----
+    "defensenews.com",
+    "janes.com",
+    "thedefensepost.com",
+    "breakingdefense.com",
 }
 
 # =============================================================================

@@ -141,7 +141,7 @@ def cleanup_old_logs(keep_days: int = 7):
 async def run_scheduled_scan():
     """Run a single scan cycle and trigger investigations for significant events."""
     from app.agent import ClaimVerificationAgent, NewsScanner
-    from app.agent.geo_mapper import get_location, get_subcategory
+    from app.agent.geo_mapper import get_location, get_subcategory, extract_location_from_text, _infer_subcategory
     from app.services.article_service import ArticleService
 
     print("\n" + "=" * 60)
@@ -208,10 +208,19 @@ async def run_scheduled_scan():
 
             # Resolve location from GDELT country code
             location = get_location(country_code) if country_code else None
+
+            # Fallback: extract location from headline/description text
+            if not location:
+                location = extract_location_from_text(event_desc)
+
             event_lat = location[0] if location else None
             event_lng = location[1] if location else None
             event_loc_name = location[2] if location else None
             event_subcategory = get_subcategory(country_code) if country_code else None
+
+            # Fallback subcategory from location name
+            if not event_subcategory and event_loc_name:
+                event_subcategory = _infer_subcategory(event_loc_name)
 
             print(f"\n[SCANNER] [{i+1}] Investigating: {event_desc[:80]}...")
 
@@ -300,6 +309,28 @@ async def run_scheduled_scan():
                             if doc.get("url") or doc.get("source_name")
                         })
 
+                        # Extract related sources from bilingual article
+                        related_sources_raw = result.get("related_sources", [])
+                        related_sources = None
+                        if related_sources_raw:
+                            related_sources = [
+                                s if isinstance(s, dict) else s.model_dump()
+                                for s in related_sources_raw
+                            ]
+                        elif evidence_docs:
+                            # Fallback: build related sources from evidence docs
+                            related_sources = [
+                                {
+                                    "url": doc.get("url", ""),
+                                    "title": doc.get("title", doc.get("source_name", "")),
+                                    "source_name": doc.get("source_name", ""),
+                                    "snippet": doc.get("snippet", "")[:200],
+                                    "credibility_tier": doc.get("credibility_tier", "tier3"),
+                                }
+                                for doc in evidence_docs[:5]
+                                if doc.get("url")
+                            ]
+
                         # Build verification result dict
                         verification_result = {
                             "total_claims": len(result.get("claims", [])),
@@ -331,6 +362,7 @@ async def run_scheduled_scan():
                                 claims=result.get("claims"),
                                 verification_result=verification_result,
                                 sources=sources,
+                                related_sources=related_sources,
                                 is_update=result.get("is_update", False),
                                 update_type=result.get("update_type"),
                                 update_reason=result.get("update_reason"),

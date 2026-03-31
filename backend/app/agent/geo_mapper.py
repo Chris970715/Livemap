@@ -68,9 +68,13 @@ COUNTRY_COORDS: dict[str, tuple[float, float, str]] = {
 # Client uses: WAR, SECURITY
 CATEGORY_TO_CLIENT: dict[str, str] = {
     "war": "WAR",
+    "conflict": "WAR",
     "terrorism": "WAR",
     "violence": "WAR",
     "military": "SECURITY",
+    "security": "SECURITY",
+    "diplomacy": "SECURITY",
+    "politics": "SECURITY",
     "protest": "SECURITY",
     "civil_unrest": "SECURITY",
     "other": "SECURITY",
@@ -78,8 +82,8 @@ CATEGORY_TO_CLIENT: dict[str, str] = {
 
 # Client category → list of backend categories (reverse mapping)
 CLIENT_TO_CATEGORIES: dict[str, list[str]] = {
-    "WAR": ["war", "terrorism", "violence"],
-    "SECURITY": ["military", "protest", "civil_unrest", "other"],
+    "WAR": ["war", "conflict", "terrorism", "violence"],
+    "SECURITY": ["military", "security", "diplomacy", "politics", "protest", "civil_unrest", "other"],
 }
 
 # GDELT country code → client subCategory
@@ -113,3 +117,124 @@ def get_client_category(backend_category: str) -> str:
 def get_subcategory(country_code: str) -> str | None:
     """Map GDELT country code to client subCategory."""
     return COUNTRY_TO_SUBCATEGORY.get(country_code)
+
+
+# Keyword → (lat, lng, name) for text-based location fallback
+LOCATION_KEYWORDS: dict[str, tuple[float, float, str]] = {
+    # Ukraine/Russia
+    "ukraine": (48.38, 31.17, "Ukraine"),
+    "kyiv": (50.45, 30.52, "Kyiv, Ukraine"),
+    "kharkiv": (49.99, 36.23, "Kharkiv, Ukraine"),
+    "donetsk": (48.02, 37.80, "Donetsk, Ukraine"),
+    "odesa": (46.48, 30.73, "Odesa, Ukraine"),
+    "russia": (55.75, 37.62, "Russia"),
+    "moscow": (55.75, 37.62, "Moscow, Russia"),
+    "crimea": (44.95, 34.10, "Crimea"),
+    # Middle East
+    "israel": (31.77, 35.22, "Israel"),
+    "gaza": (31.50, 34.47, "Gaza"),
+    "iran": (35.69, 51.39, "Iran"),
+    "tehran": (35.69, 51.39, "Tehran, Iran"),
+    "isfahan": (32.65, 51.68, "Isfahan, Iran"),
+    "hormuz": (26.57, 56.28, "Strait of Hormuz"),
+    "lebanon": (33.87, 35.51, "Lebanon"),
+    "hezbollah": (33.87, 35.51, "Lebanon"),
+    "syria": (33.51, 36.29, "Syria"),
+    "yemen": (15.35, 44.21, "Yemen"),
+    "houthi": (15.35, 44.21, "Yemen"),
+    "iraq": (33.31, 44.37, "Iraq"),
+    "saudi": (24.77, 46.74, "Saudi Arabia"),
+    "dubai": (25.20, 55.27, "Dubai, UAE"),
+    "netanyahu": (31.77, 35.22, "Israel"),
+    # Korea
+    "north korea": (39.02, 125.75, "North Korea"),
+    "south korea": (37.57, 126.98, "South Korea"),
+    "kim jong": (39.02, 125.75, "North Korea"),
+    "dmz": (38.30, 127.00, "DMZ, Korean Peninsula"),
+    "pyongyang": (39.02, 125.75, "Pyongyang, North Korea"),
+    # China/Taiwan
+    "taiwan": (25.03, 121.57, "Taiwan"),
+    "china": (39.90, 116.41, "China"),
+    "beijing": (39.90, 116.41, "Beijing, China"),
+    "south china sea": (15.00, 114.00, "South China Sea"),
+    # Others
+    "nato": (50.85, 4.35, "Brussels, Belgium"),
+    "pentagon": (38.87, -77.06, "Pentagon, USA"),
+    "trump": (38.90, -77.04, "Washington, USA"),
+    "unifil": (33.27, 35.20, "Southern Lebanon"),
+    "afghanistan": (34.53, 69.17, "Afghanistan"),
+    "pakistan": (33.69, 73.04, "Pakistan"),
+    "myanmar": (16.87, 96.20, "Myanmar"),
+    "sudan": (15.59, 32.53, "Sudan"),
+    "ethiopia": (9.02, 38.75, "Ethiopia"),
+    "somalia": (2.05, 45.32, "Somalia"),
+    "libya": (32.90, 13.18, "Libya"),
+    "niger": (13.51, 2.11, "Niger"),
+    "mali": (12.64, -8.00, "Mali"),
+    # Korean (한국어)
+    "우크라이나": (48.38, 31.17, "Ukraine"),
+    "러시아": (55.75, 37.62, "Russia"),
+    "이스라엘": (31.77, 35.22, "Israel"),
+    "이란": (35.69, 51.39, "Iran"),
+    "레바논": (33.87, 35.51, "Lebanon"),
+    "시리아": (33.51, 36.29, "Syria"),
+    "사우디": (24.77, 46.74, "Saudi Arabia"),
+    "두바이": (25.20, 55.27, "Dubai, UAE"),
+    "가자": (31.50, 34.47, "Gaza"),
+    "예멘": (15.35, 44.21, "Yemen"),
+    "북한": (39.02, 125.75, "North Korea"),
+    "남한": (37.57, 126.98, "South Korea"),
+    "한국": (37.57, 126.98, "South Korea"),
+    "중국": (39.90, 116.41, "China"),
+    "대만": (25.03, 121.57, "Taiwan"),
+    "이스파한": (32.65, 51.68, "Isfahan, Iran"),
+    "호르무즈": (26.57, 56.28, "Strait of Hormuz"),
+    "네타냐후": (31.77, 35.22, "Israel"),
+    "트럼프": (38.90, -77.04, "Washington, USA"),
+    "스페인": (40.42, -3.70, "Spain"),
+    # Cyrillic (Ukrainian/Russian/Bulgarian)
+    "україн": (48.38, 31.17, "Ukraine"),
+    "росій": (55.75, 37.62, "Russia"),
+    "ізраїл": (31.77, 35.22, "Israel"),
+    "іран": (35.69, 51.39, "Iran"),
+    "нетаняху": (31.77, 35.22, "Israel"),
+    "ппо": (48.38, 31.17, "Ukraine"),
+    "дронів": (48.38, 31.17, "Ukraine"),
+}
+
+
+def extract_location_from_text(text: str) -> tuple[float, float, str] | None:
+    """Extract location coordinates from article text using keyword matching.
+
+    Checks text (title/description) for known location keywords and returns
+    the first match's coordinates. Longer keywords are checked first for specificity.
+    """
+    text_lower = text.lower()
+    # Sort by keyword length descending (more specific matches first)
+    for keyword in sorted(LOCATION_KEYWORDS, key=len, reverse=True):
+        if keyword in text_lower:
+            return LOCATION_KEYWORDS[keyword]
+    return None
+
+
+# Location name → subcategory inference
+_SUBCATEGORY_KEYWORDS: dict[str, str] = {
+    "ukraine": "ru-uk", "russia": "ru-uk", "kyiv": "ru-uk", "moscow": "ru-uk",
+    "crimea": "ru-uk", "donetsk": "ru-uk", "kharkiv": "ru-uk",
+    "israel": "is-ir", "gaza": "is-ir", "iran": "is-ir", "lebanon": "is-ir",
+    "syria": "is-ir", "yemen": "is-ir", "hormuz": "is-ir", "dubai": "is-ir",
+    "saudi": "is-ir", "isfahan": "is-ir", "tehran": "is-ir",
+    "korea": "KOREA", "pyongyang": "KOREA", "dmz": "KOREA",
+    "china": "CHINA", "taiwan": "CHINA", "beijing": "CHINA",
+    "usa": "US", "pentagon": "US", "washington": "US", "trump": "US",
+    "japan": "JAPAN",
+}
+
+
+def _infer_subcategory(location_name: str) -> str | None:
+    """Infer subcategory from location name."""
+    name_lower = location_name.lower()
+    for keyword, subcat in _SUBCATEGORY_KEYWORDS.items():
+        if keyword in name_lower:
+            return subcat
+    return None
