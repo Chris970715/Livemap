@@ -189,7 +189,7 @@ class AgentSettings(BaseSettings):
     # LLM 타임아웃 및 동시성 설정
     # ===========================================
     llm_timeout_seconds: float = 60.0
-    max_concurrent_llm_calls: int = 3
+    max_concurrent_llm_calls: int = 5
     investigation_timeout_seconds: float = 300.0  # 5 minutes
 
     # ===========================================

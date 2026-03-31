@@ -54,4 +54,5 @@ export interface FeedItem {
 export interface FeedFilters {
   category: "WAR" | "SECURITY";
   subCategory?: string;
+  q?: string;
 }

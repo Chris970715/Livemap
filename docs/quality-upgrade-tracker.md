@@ -33,22 +33,22 @@ main (배포용)
 
 ### Tier 1: 품질 기반
 
-| #   | 작업                               | 브랜치               | 상태      | 담당 세션 |
-| --- | ---------------------------------- | -------------------- | --------- | --------- |
-| 1-1 | 기사 생성 모델 → Claude Sonnet 4.6 | `feat/model-upgrade` | 🔴 미시작 | -         |
-| 1-2 | 분류 모델 → Claude Haiku 4.5       | `feat/model-upgrade` | 🔴 미시작 | -         |
-| 1-3 | 프롬프트 강화 (placeholder 방지)   | `feat/model-upgrade` | 🔴 미시작 | -         |
-| 1-4 | LLM 기반 지오로케이션              | `feat/geolocation`   | 🔴 미시작 | -         |
+| #   | 작업                               | 브랜치                 | 상태                       | 담당 세션 |
+| --- | ---------------------------------- | ---------------------- | -------------------------- | --------- |
+| 1-1 | 기사 생성 모델 → Claude Sonnet 4.6 | `feat/model-upgrade`   | 🟡 보류 (gpt-4o-mini 유지) | -         |
+| 1-2 | 분류 모델 → Claude Haiku 4.5       | `feat/model-upgrade`   | 🟡 보류 (gpt-4o-mini 유지) | -         |
+| 1-3 | 프롬프트 강화 (placeholder 방지)   | `feat/quality-upgrade` | 🟢 완료                    | 세션 A    |
+| 1-4 | LLM 기반 지오로케이션              | `feat/geolocation`     | 🔴 미시작                  | -         |
 
 ### Tier 2: 차별화
 
-| #   | 작업                        | 브랜치                   | 상태      | 담당 세션 |
-| --- | --------------------------- | ------------------------ | --------- | --------- |
-| 2-1 | NewsData.io 소스 추가       | `feat/multi-source`      | 🔴 미시작 | -         |
-| 2-2 | 프론트엔드 레이아웃 재설계  | `feat/frontend-redesign` | 🔴 미시작 | -         |
-| 2-3 | SSE 실시간 업데이트         | `feat/realtime-sse`      | 🔴 미시작 | -         |
-| 2-4 | 한/영 토글                  | `feat/frontend-redesign` | 🔴 미시작 | -         |
-| 2-5 | 지도 클러스터링 + 다크 타일 | `feat/frontend-redesign` | 🔴 미시작 | -         |
+| #   | 작업                        | 브랜치                 | 상태               | 담당 세션 |
+| --- | --------------------------- | ---------------------- | ------------------ | --------- |
+| 2-1 | NewsData.io 소스 추가       | `feat/multi-source`    | 🔴 미시작          | -         |
+| 2-2 | 프론트엔드 레이아웃 재설계  | `feat/quality-upgrade` | 🟢 완료            | 세션 A    |
+| 2-3 | SSE 실시간 업데이트         | `feat/quality-upgrade` | 🟢 완료            | 세션 A    |
+| 2-4 | 한/영 토글                  | `feat/quality-upgrade` | 🟢 완료            | 세션 A    |
+| 2-5 | 지도 클러스터링 + 다크 타일 | `feat/quality-upgrade` | 🟢 완료 (다크타일) | 세션 A    |
 
 ### Tier 3: 압도적 우위
 
@@ -56,9 +56,9 @@ main (배포용)
 | --- | ---------------------- | ------------------------ | --------- | --------- |
 | 3-1 | Telegram 채널 모니터링 | `feat/telegram-source`   | 🔴 미시작 | -         |
 | 3-2 | 고급 필터 + 검색       | `feat/frontend-redesign` | 🔴 미시작 | -         |
-| 3-3 | 모바일 반응형          | `feat/frontend-redesign` | 🔴 미시작 | -         |
+| 3-3 | 모바일 반응형          | `feat/quality-upgrade`   | 🟢 완료   | 세션 A    |
 | 3-4 | 병렬 파이프라인        | `feat/parallel-pipeline` | 🔴 미시작 | -         |
-| 3-5 | 기사 모달 검증 시각화  | `feat/frontend-redesign` | 🔴 미시작 | -         |
+| 3-5 | 기사 모달 검증 시각화  | `feat/quality-upgrade`   | 🟢 완료   | 세션 A    |
 
 ---
 

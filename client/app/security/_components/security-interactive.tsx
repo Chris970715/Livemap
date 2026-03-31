@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 
 import { useFeedsQuery, useFeedSSE } from "@/lib/hooks/use-feeds";
+import { useDebouncedCallback } from "use-debounce";
 import {
   securityCategoryAtom,
   securitySubCategoryAtom,
@@ -13,6 +14,7 @@ import {
   selectedFeedAtom,
   isModalOpenAtom,
   feedsListAtom,
+  searchQueryAtom,
 } from "@/lib/store";
 import { SecurityMap } from "./security-map";
 import { SecurityCategoryFilter } from "./security-category-filter";
@@ -31,7 +33,12 @@ export function SecurityInteractive() {
   const setSelectedFeed = useSetAtom(selectedFeedAtom);
   const setIsModalOpen = useSetAtom(isModalOpenAtom);
   const setFeedsList = useSetAtom(feedsListAtom);
+  const setSearchQuery = useSetAtom(searchQueryAtom);
   const filters = useAtomValue(securityFeedFiltersAtom);
+
+  const debouncedSearch = useDebouncedCallback((value: string) => {
+    setSearchQuery(value);
+  }, 500);
 
   const { data: feeds = [], isFetching } = useFeedsQuery(filters);
   const searchParams = useSearchParams();
@@ -87,8 +94,19 @@ export function SecurityInteractive() {
             <SecurityMap feeds={feeds} />
           </div>
 
-          <div className="w-full lg:w-96 h-[400px] lg:h-[calc(100vh-200px)]">
-            <FeedList feeds={feeds} isLoading={isFetching} />
+          <div className="w-full lg:w-96 h-[400px] lg:h-[calc(100vh-200px)] flex flex-col">
+            {/* Search bar */}
+            <div className="mb-2 flex-shrink-0">
+              <input
+                type="text"
+                placeholder="Search articles..."
+                onChange={(e) => debouncedSearch(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"
+              />
+            </div>
+            <div className="flex-1 min-h-0">
+              <FeedList feeds={feeds} isLoading={isFetching} />
+            </div>
           </div>
         </div>
       </div>
