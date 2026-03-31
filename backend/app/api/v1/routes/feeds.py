@@ -5,10 +5,13 @@ GET /api/v1/feeds - List articles with filters (mapped to FeedItem schema)
 GET /api/v1/feeds/{id} - Get single article by ID
 """
 
+import asyncio
+import json as json_module
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -20,6 +23,19 @@ from app.models.event import Event
 from app.schemas.feed import FeedItem
 
 router = APIRouter()
+
+# SSE pub/sub for real-time article updates
+_sse_subscribers: list[asyncio.Queue] = []
+
+
+def notify_new_article(data: dict):
+    """Notify all SSE subscribers of a new article. Called from lifespan.py."""
+    for q in _sse_subscribers:
+        try:
+            q.put_nowait(data)
+        except asyncio.QueueFull:
+            pass
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -155,7 +171,7 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
     else:
         status = "pending"
 
-    # Structured article content
+    # Structured article content (Korean primary)
     article_structure = None
     headline = article.headline_ko or article.headline_en
     if headline:
@@ -164,6 +180,16 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
             "lead": article.lead_ko or article.lead_en or "",
             "nutGraph": article.nut_graph_ko or article.nut_graph_en,
             "body": article.body_ko or article.body_en or "",
+        }
+
+    # English article structure (for language toggle)
+    article_en_structure = None
+    if article.headline_en:
+        article_en_structure = {
+            "headline": article.headline_en,
+            "lead": article.lead_en or "",
+            "nutGraph": article.nut_graph_en,
+            "body": article.body_en or "",
         }
 
     # Related sources
@@ -184,12 +210,28 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
         except (json.JSONDecodeError, TypeError):
             pass
 
+    # Derive source name from related sources
+    source_name = "Livemap AI"
+    if related_sources:
+        first_source = related_sources[0].get("sourceName", "")
+        if first_source:
+            source_name = f"AI ({first_source})"
+
+    # Breaking news flag (< 1 hour old)
+    is_breaking = False
+    if article.published_at:
+        pub = article.published_at
+        if pub.tzinfo is None:
+            pub = pub.replace(tzinfo=timezone.utc)
+        age = _now() - pub
+        is_breaking = age < timedelta(hours=1)
+
     return {
         "id": article.id,
         "title": headline or "Untitled",
-        "content": article.full_text_ko or article.full_text_en,
+        "content": None,
         "originalLink": original_link,
-        "sourceName": "Livemap AI",
+        "sourceName": source_name,
         "sourceType": "AI",
         "publishedAt": article.published_at,
         "author": None,
@@ -204,7 +246,12 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
         "credibilityScore": credibility,
         "verificationStatus": status,
         "article": article_structure,
+        "articleEn": article_en_structure,
         "relatedSources": related_sources,
+        "claimsVerified": article.claims_verified,
+        "claimsTotal": article.claims_total,
+        "sourceCount": article.source_count,
+        "isBreaking": is_breaking,
     }
 
 
@@ -280,6 +327,33 @@ async def get_feeds(
         if subCategory:
             filtered = [f for f in filtered if f["subCategory"] == subCategory]
         return filtered[offset : offset + limit]
+
+
+@router.get("/stream")
+async def stream_feeds():
+    """SSE endpoint for real-time article updates."""
+    queue: asyncio.Queue = asyncio.Queue(maxsize=100)
+    _sse_subscribers.append(queue)
+
+    async def event_generator():
+        try:
+            while True:
+                try:
+                    data = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    yield f"data: {json_module.dumps(data, default=str)}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": heartbeat\n\n"
+        except asyncio.CancelledError:
+            pass
+        finally:
+            if queue in _sse_subscribers:
+                _sse_subscribers.remove(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/{feed_id}", response_model=FeedItem)

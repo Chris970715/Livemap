@@ -141,7 +141,7 @@ def cleanup_old_logs(keep_days: int = 7):
 async def run_scheduled_scan():
     """Run a single scan cycle and trigger investigations for significant events."""
     from app.agent import ClaimVerificationAgent, NewsScanner
-    from app.agent.geo_mapper import get_location, get_subcategory, extract_location_from_text, _infer_subcategory
+    from app.agent.geo_mapper import get_location, get_subcategory, get_client_category, extract_location_from_text, _infer_subcategory
     from app.services.article_service import ArticleService
 
     print("\n" + "=" * 60)
@@ -374,6 +374,20 @@ async def run_scheduled_scan():
                                 sub_category=event_subcategory,
                             )
                             print(f"[SCANNER] [{i+1}] SAVED: event_id={saved_event.id}, article_id={saved_article.id}")
+
+                            # Notify SSE subscribers of new article
+                            try:
+                                from app.api.v1.routes.feeds import notify_new_article
+                                notify_new_article({
+                                    "event": "new_article",
+                                    "id": saved_article.id,
+                                    "title": saved_article.headline_ko or saved_article.headline_en or "",
+                                    "category": get_client_category(category),
+                                    "isBreaking": True,
+                                })
+                            except Exception:
+                                pass  # SSE notification is best-effort
+
                             investigation_count += 1
                             # P2: Track published event for in-cycle duplicate prevention
                             published_in_cycle.append(event_desc)

@@ -70,14 +70,12 @@ export function SecuritySubCategoryFilter() {
   const allCenter: [number, number] = securityCategory === "전쟁" ? [30.0, 40.0] : [30.0, 100.0];
 
   return (
-    <div className="flex justify-start mb-4">
-      <div className="flex gap-2">
+    <div className="flex justify-start mb-4 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-2 snap-x">
         {/* 전체 보기 */}
         <div
           className={`px-3 py-1 rounded-full cursor-pointer transition-all duration-200 text-xs ${
-            selectedSubCategory === ""
-              ? "text-white"
-              : "text-gray-400 hover:text-white"
+            selectedSubCategory === "" ? "text-white" : "text-gray-400 hover:text-white"
           }`}
           style={{
             border: "1px solid #374151",

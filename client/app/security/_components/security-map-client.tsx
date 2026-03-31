@@ -22,9 +22,10 @@ function createCategoryIcon(category: string, verified: boolean) {
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
       <path d="M16 0C7.16 0 0 7.16 0 16c0 12 16 24 16 24s16-12 16-24C32 7.16 24.84 0 16 0z" fill="${color}" stroke="${borderColor}" stroke-width="2"/>
       <circle cx="16" cy="16" r="8" fill="white" opacity="0.9"/>
-      ${category === "WAR"
-        ? '<path d="M12 12l8 8M20 12l-8 8" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>'
-        : '<path d="M16 10v6m0 4v.01" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>'
+      ${
+        category === "WAR"
+          ? '<path d="M12 12l8 8M20 12l-8 8" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"/>'
+          : '<path d="M16 10v6m0 4v.01" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>'
       }
     </svg>`;
   return L.divIcon({
@@ -49,7 +50,7 @@ function FitBoundsUpdater({ feeds }: { feeds: FeedItem[] }) {
   useEffect(() => {
     if (feeds.length === 0) return;
     const bounds = L.latLngBounds(
-      feeds.map((f) => [f.location.lat, f.location.lng] as L.LatLngTuple),
+      feeds.map((f) => [f.location.lat, f.location.lng] as L.LatLngTuple)
     );
     map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
   }, [feeds, map]);
@@ -81,8 +82,8 @@ export function SecurityMapClient({ feeds }: SecurityMapClientProps) {
         center && <MapCenterUpdater center={center} />
       )}
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       />
 
       {feeds.map((feed) => (

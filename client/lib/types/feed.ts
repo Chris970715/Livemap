@@ -20,7 +20,7 @@ export interface RelatedSource {
 export interface FeedItem {
   id: number;
   title: string;
-  content: string;
+  content?: string;
   originalLink?: string;
   sourceName: string;
   sourceType: string;
@@ -37,10 +37,18 @@ export interface FeedItem {
   // Verification
   credibilityScore?: number;
   verificationStatus?: "verified" | "partially_verified" | "unverified" | "pending";
-  // Structured article
+  // Structured article (Korean primary)
   article?: ArticleStructure;
+  // English article (for language toggle)
+  articleEn?: ArticleStructure;
   // Related sources
   relatedSources?: RelatedSource[];
+  // Claims metadata
+  claimsVerified?: number;
+  claimsTotal?: number;
+  sourceCount?: number;
+  // Breaking news flag
+  isBreaking?: boolean;
 }
 
 export interface FeedFilters {

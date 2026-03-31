@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -84,6 +84,9 @@ class BilingualArticle(BaseModel):
 
 BILINGUAL_ARTICLE_PROMPT = """You are a professional news writer. Generate a news article in BOTH English AND Korean.
 
+## CURRENT DATE
+Today is {current_date}. Use this for temporal context in the article.
+
 ## EVENT SUMMARY
 {event_summary}
 
@@ -126,6 +129,27 @@ BILINGUAL_ARTICLE_PROMPT = """You are a professional news writer. Generate a new
 **Always include specifics:**
 - Dates, numbers, timeframes, comparisons
 - Let facts justify any strong descriptors
+
+**PLACEHOLDER PROHIBITION:**
+- NEVER leave placeholder text like [날짜], [이름], [위치], [날짜 삽입], [insert date], [name]
+- If a specific date is unknown, write "in recent days" or "최근"
+- If a specific name is unknown, use the organizational name (e.g., "a Ukrainian official" / "우크라이나 관계자")
+
+**NO REPETITION:**
+- NEVER repeat the same sentence or phrase within an article
+- Each paragraph MUST contain NEW information not stated in previous paragraphs
+- If you run out of verified facts, end the article rather than repeating
+
+**SPECIFICITY REQUIREMENT:**
+- Replace vague phrases with specific details from verified claims
+- FORBIDDEN: "여러 지역에서", "구체적인 사항은 확인되지 않았다", "some regions", "details are unclear"
+- Use the actual place names, numbers, and dates from the claims
+- If no specific details exist, state what IS known rather than what is not
+
+**NUT GRAPH SOURCE ATTRIBUTION:**
+- The nut graph paragraph MUST cite at least one source by name
+- Example: "According to Reuters, ..." / "로이터통신에 따르면 ..."
+- NEVER write a nut graph without naming a source
 
 ---
 
@@ -259,13 +283,14 @@ class BilingualArticleGenerator:
         try:
             response = await asyncio.wait_for(
                 self.llm.ainvoke([
-                    SystemMessage(content="You are a professional bilingual news writer (English/Korean)."),
+                    SystemMessage(content=f"You are a professional bilingual news writer (English/Korean). Today's date is {datetime.now(timezone.utc).strftime('%B %d, %Y')}."),
                     HumanMessage(content=BILINGUAL_ARTICLE_PROMPT.format(
                         event_summary=event_summary,
                         verified_claims=verified_text,
                         refuted_claims=refuted_text,
                         unverified_claims=unverified_text,
                         sources=sources_text,
+                        current_date=datetime.now(timezone.utc).strftime("%B %d, %Y"),
                     )),
                 ]),
                 timeout=self.llm_timeout,

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 
-import { useFeedsQuery } from "@/lib/hooks/use-feeds";
+import { useFeedsQuery, useFeedSSE } from "@/lib/hooks/use-feeds";
 import {
   securityCategoryAtom,
   securitySubCategoryAtom,
@@ -12,12 +12,14 @@ import {
   mapCenterAtom,
   selectedFeedAtom,
   isModalOpenAtom,
+  feedsListAtom,
 } from "@/lib/store";
 import { SecurityMap } from "./security-map";
 import { SecurityCategoryFilter } from "./security-category-filter";
 import { SecuritySubCategoryFilter } from "./security-sub-category-filter";
 import { FeedList } from "./feed-list";
 import { FeedModal } from "./feed-modal";
+import { BreakingNewsTicker } from "./breaking-news-ticker";
 
 export function SecurityInteractive() {
   const router = useRouter();
@@ -28,10 +30,19 @@ export function SecurityInteractive() {
   const isModalOpen = useAtomValue(isModalOpenAtom);
   const setSelectedFeed = useSetAtom(selectedFeedAtom);
   const setIsModalOpen = useSetAtom(isModalOpenAtom);
+  const setFeedsList = useSetAtom(feedsListAtom);
   const filters = useAtomValue(securityFeedFiltersAtom);
 
   const { data: feeds = [], isFetching } = useFeedsQuery(filters);
   const searchParams = useSearchParams();
+
+  // SSE real-time updates
+  useFeedSSE();
+
+  // Sync feeds list for modal navigation
+  useEffect(() => {
+    setFeedsList(feeds);
+  }, [feeds, setFeedsList]);
 
   // 카테고리 변경 시 기본 서브카테고리/센터 설정
   useEffect(() => {
@@ -66,19 +77,17 @@ export function SecurityInteractive() {
 
   return (
     <>
-      <div className="py-8">
+      <div className="py-4">
+        <BreakingNewsTicker />
         <SecurityCategoryFilter />
-
-        <h2 className="text-2xl font-bold mb-6 text-white">실시간 뉴스</h2>
-
         <SecuritySubCategoryFilter />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 bg-gray-900 rounded-lg overflow-hidden h-[600px]">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 bg-gray-900 rounded-lg overflow-hidden h-[300px] lg:h-[calc(100vh-200px)]">
             <SecurityMap feeds={feeds} />
           </div>
 
-          <div className="h-[600px]">
+          <div className="w-full lg:w-96 h-[400px] lg:h-[calc(100vh-200px)]">
             <FeedList feeds={feeds} isLoading={isFetching} />
           </div>
         </div>

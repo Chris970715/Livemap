@@ -34,7 +34,7 @@ class RelatedSourceSchema(BaseModel):
 class FeedItem(BaseModel):
     id: int
     title: str = Field(..., max_length=500)
-    content: str
+    content: Optional[str] = None
     originalLink: Optional[str] = None
     sourceName: str
     sourceType: str
@@ -47,7 +47,12 @@ class FeedItem(BaseModel):
     credibilityScore: Optional[int] = Field(None, ge=0, le=100)
     verificationStatus: Optional[str] = None
     article: Optional[ArticleStructureSchema] = None
+    articleEn: Optional[ArticleStructureSchema] = None
     relatedSources: list[RelatedSourceSchema] = Field(default_factory=list)
+    claimsVerified: Optional[int] = None
+    claimsTotal: Optional[int] = None
+    sourceCount: Optional[int] = None
+    isBreaking: bool = False
 
     model_config = ConfigDict(
         populate_by_name=True,

@@ -11,5 +11,7 @@ export {
   mapCenterAtom,
   selectedFeedAtom,
   isModalOpenAtom,
+  languageAtom,
+  feedsListAtom,
   securityFeedFiltersAtom,
 } from "./security-atoms";
