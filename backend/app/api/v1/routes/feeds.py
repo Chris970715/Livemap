@@ -12,7 +12,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import func as sa_func, select, text as sa_text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -261,6 +261,10 @@ async def get_feeds(
     subCategory: Optional[str] = Query(
         None, description="Sub-category filter: ru-uk, is-ir, KOREA, etc."
     ),
+    q: Optional[str] = Query(None, description="Full-text search query"),
+    credibilityMin: Optional[int] = Query(None, ge=0, le=100, description="Minimum credibility score"),
+    verificationStatus: Optional[str] = Query(None, description="Filter by verification status"),
+    sortBy: Optional[str] = Query("newest", description="Sort: newest, credibility, relevance"),
     limit: int = Query(20, ge=1, le=100, description="Number of items to return"),
     offset: int = Query(0, ge=0, description="Number of items to skip"),
     db: AsyncSession = Depends(get_db),
@@ -268,7 +272,7 @@ async def get_feeds(
     """
     Get list of verified news articles as feed items.
 
-    Queries the events+articles tables (from the agent pipeline).
+    Supports full-text search, credibility filtering, and verification status filtering.
     Falls back to mock data when DB is empty.
     """
     try:
@@ -282,11 +286,43 @@ async def get_feeds(
             .where(Event.category.in_(backend_cats))
             .where(Article.status == "published")
             .where(Event.location_lat.isnot(None))  # Only items with location
-            .order_by(Article.published_at.desc())
         )
 
         if subCategory:
             query = query.where(Event.sub_category == subCategory)
+
+        # Full-text search
+        if q and q.strip():
+
+            query = query.where(
+                sa_text("articles.search_vector @@ websearch_to_tsquery('english', :q)")
+            ).params(q=q.strip())
+
+        # Credibility filter
+        if credibilityMin is not None:
+            min_score = credibilityMin / 100.0
+            query = query.where(Article.verification_score >= min_score)
+
+        # Verification status filter
+        if verificationStatus:
+            if verificationStatus == "verified":
+                query = query.where(Article.claims_verified > 0).where(
+                    (Article.claims_verified * 1.0 / sa_func.greatest(Article.claims_total, 1)) >= 0.8
+                )
+            elif verificationStatus == "partially_verified":
+                ratio = Article.claims_verified * 1.0 / sa_func.greatest(Article.claims_total, 1)
+                query = query.where(ratio >= 0.5).where(ratio < 0.8)
+
+        # Sorting
+        if sortBy == "credibility":
+            query = query.order_by(Article.verification_score.desc().nullslast(), Article.published_at.desc())
+        elif sortBy == "relevance" and q:
+
+            query = query.order_by(
+                sa_text("ts_rank(articles.search_vector, websearch_to_tsquery('english', :q)) DESC")
+            ).params(q=q.strip())
+        else:
+            query = query.order_by(Article.published_at.desc())
 
         query = query.offset(offset).limit(limit)
 

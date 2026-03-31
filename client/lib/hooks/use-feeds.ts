@@ -27,6 +27,7 @@ export function useFeedsQuery(filters: FeedFilters) {
       const params = new URLSearchParams({
         category: filters.category,
         ...(filters.subCategory && { subCategory: filters.subCategory }),
+        ...(filters.q && { q: filters.q }),
       });
 
       const res = await fetch(`${API_BASE}/feeds?${params}`);

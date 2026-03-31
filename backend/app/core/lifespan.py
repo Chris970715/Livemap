@@ -195,7 +195,7 @@ async def run_scheduled_scan():
 
         # Start investigation for each significant event (using v3 Claim-Level Agent)
         agent = ClaimVerificationAgent()
-        max_investigations = 5  # Limit per scan (increased for international affairs focus)
+        max_investigations = 10  # Limit per scan (increased: parallel execution)
         investigation_count = 0
 
         for i, event in enumerate(events):

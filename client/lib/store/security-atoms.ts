@@ -22,6 +22,9 @@ export const isModalOpenAtom = atom<boolean>(false);
 // 언어 설정
 export const languageAtom = atom<"ko" | "en">("ko");
 
+// 검색 쿼리
+export const searchQueryAtom = atom<string>("");
+
 // 전체 피드 목록 (모달 prev/next 네비게이션용)
 export const feedsListAtom = atom<FeedItem[]>([]);
 
@@ -29,4 +32,5 @@ export const feedsListAtom = atom<FeedItem[]>([]);
 export const securityFeedFiltersAtom = atom((get) => ({
   category: get(securityCategoryAtom) === "전쟁" ? ("WAR" as const) : ("SECURITY" as const),
   subCategory: get(securitySubCategoryAtom),
+  q: get(searchQueryAtom) || undefined,
 }));

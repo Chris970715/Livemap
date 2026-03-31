@@ -13,5 +13,6 @@ export {
   isModalOpenAtom,
   languageAtom,
   feedsListAtom,
+  searchQueryAtom,
   securityFeedFiltersAtom,
 } from "./security-atoms";

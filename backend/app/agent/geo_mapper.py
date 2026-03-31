@@ -8,6 +8,14 @@ GDELT uses FIPS 10-4 country codes. This module maps them to:
 
 from __future__ import annotations
 
+import asyncio
+import logging
+import time
+
+import httpx
+
+logger = logging.getLogger(__name__)
+
 # GDELT FIPS 10-4 country code → (lat, lng, name)
 # Using capital/major city coordinates for map markers
 COUNTRY_COORDS: dict[str, tuple[float, float, str]] = {
@@ -229,6 +237,48 @@ _SUBCATEGORY_KEYWORDS: dict[str, str] = {
     "usa": "US", "pentagon": "US", "washington": "US", "trump": "US",
     "japan": "JAPAN",
 }
+
+
+# Nominatim geocoding cache and rate limiter
+_nominatim_cache: dict[str, tuple[float, float, str] | None] = {}
+_nominatim_last_call: float = 0.0
+
+
+async def geocode_nominatim(place_name: str) -> tuple[float, float, str] | None:
+    """Geocode a place name using Nominatim (free, OSM-based).
+
+    Rate limited to 1 request/second per Nominatim usage policy.
+    Results are cached in memory.
+    """
+    global _nominatim_last_call
+
+    if place_name in _nominatim_cache:
+        return _nominatim_cache[place_name]
+
+    # Rate limit: 1 req/sec
+    elapsed = time.time() - _nominatim_last_call
+    if elapsed < 1.1:
+        await asyncio.sleep(1.1 - elapsed)
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={"q": place_name, "format": "json", "limit": 1},
+                headers={"User-Agent": "Huginn/1.0 (war-security-news)"},
+            )
+            _nominatim_last_call = time.time()
+            data = resp.json()
+            if data:
+                result = (float(data[0]["lat"]), float(data[0]["lon"]), data[0].get("display_name", place_name))
+                _nominatim_cache[place_name] = result
+                logger.info(f"[NOMINATIM] Geocoded '{place_name}' → {result[2]} ({result[0]:.2f}, {result[1]:.2f})")
+                return result
+    except Exception as e:
+        logger.warning(f"[NOMINATIM] Failed for '{place_name}': {e}")
+
+    _nominatim_cache[place_name] = None
+    return None
 
 
 def _infer_subcategory(location_name: str) -> str | None:
