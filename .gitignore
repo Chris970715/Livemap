@@ -1,0 +1,15 @@
+# Environment
+.env
+.env.local
+
+# Session management
+HANDOFF.md
+
+# Claude local settings
+.claude/settings.local.json
+
+# OS
+.DS_Store
+
+# Screenshots (local only)
+screenshots/

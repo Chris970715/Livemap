@@ -1,0 +1,50 @@
+{
+  "_settings_hierarchy": "Managed > CLI args > Local(.claude/settings.local.json) > Project(.claude/settings.json) > User(~/.claude/settings.json)",
+  "_description": "프로젝트 .claude/settings.json 템플릿. 필요한 훅만 활성화하여 사용.",
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f HANDOFF.md ]; then cat HANDOFF.md; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(cat /dev/stdin | jq -r '.tool_input.command // empty'); if echo \"$CMD\" | grep -qE '(rm\\s+-rf\\s+/|git\\s+push\\s+--force\\s+(origin\\s+)?(main|master)|drop\\s+database|DROP\\s+TABLE)'; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Dangerous command blocked\"}}' >&2; exit 2; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=$(cat /dev/stdin | jq -r '.tool_input.file_path // empty'); if [ -n \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|js|jsx|css|md|json)$'; then npx prettier --write \"$FILE\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "MSG=$(cat /dev/stdin | jq -r '.message // \"Task complete\"'); osascript -e \"display notification \\\"$MSG\\\" with title \\\"Claude Code\\\" sound name \\\"Glass\\\"\""
+          }
+        ]
+      }
+    ]
+  }
+}
