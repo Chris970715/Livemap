@@ -1,0 +1,246 @@
+// Prisma Schema for Next.js 16 + Prisma 7
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================
+// Enums
+// ===========================================
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// ===========================================
+// NextAuth.js Adapter Models
+// ===========================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String?   @unique
+  emailVerified  DateTime? @map("email_verified")
+  hashedPassword String?   @map("hashed_password")
+  image          String?
+  role           Role      @default(USER)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  accounts Account[]
+  sessions Session[]
+  items    Item[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ===========================================
+// Example Domain: Item (CRUD 예제)
+// ===========================================
+
+model Item {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("DRAFT") // DRAFT, PUBLISHED
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("items")
+}
+
+// ===========================================
+// Livemap Domain: Channel (Social Media Sources)
+// ===========================================
+
+model Channel {
+  id                Int      @id @default(autoincrement())
+
+  // Platform identification
+  platform          String   @db.VarChar(50)  // TELEGRAM, X
+  platformChannelId String   @map("platform_channel_id") @db.VarChar(255)
+  username          String?  @db.VarChar(255)
+  displayName       String?  @map("display_name") @db.VarChar(500)
+
+  // Channel metadata
+  subscriberCount   Int?     @map("subscriber_count")
+  channelAgeDays    Int?     @map("channel_age_days")
+  isVerified        Boolean  @default(false) @map("is_verified")
+  description       String?  @db.VarChar(2000)
+  language          String?  @db.VarChar(10)  // ISO 639-1
+
+  // Credibility metrics (calculated)
+  credibilityScore  Float?   @map("credibility_score")  // 0.0-1.0
+  tier              Int      @default(5)  // 1 (best) - 5 (unknown)
+
+  // Historical accuracy tracking
+  totalPostsAnalyzed   Int   @default(0) @map("total_posts_analyzed")
+  postsVerifiedTrue    Int   @default(0) @map("posts_verified_true")
+  postsVerifiedFalse   Int   @default(0) @map("posts_verified_false")
+  postsUnverifiable    Int   @default(0) @map("posts_unverifiable")
+  historicalAccuracy   Float? @map("historical_accuracy")  // 0.0-1.0
+
+  // Manual overrides
+  isTrusted         Boolean? @map("is_trusted")  // Manual trust override
+  isBlocked         Boolean  @default(false) @map("is_blocked")
+  notes             String?  @db.VarChar(2000)
+
+  // Timestamps
+  firstSeenAt       DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt        DateTime @default(now()) @map("last_seen_at")
+  credibilityUpdatedAt DateTime? @map("credibility_updated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  feeds             Feed[]
+
+  @@unique([platform, platformChannelId], name: "uq_channel_platform_id")
+  @@index([platform])
+  @@map("channels")
+}
+
+// ===========================================
+// Livemap Domain: Feed (Verified News Items)
+// ===========================================
+
+model Feed {
+  id            Int      @id @default(autoincrement())
+
+  // Content
+  title         String   @db.VarChar(500)
+  content       String   @db.Text
+  originalLink  String?  @map("original_link") @db.VarChar(1000)
+
+  // Source
+  sourceName    String   @map("source_name") @db.VarChar(255)
+  sourceType    String   @map("source_type") @db.VarChar(50)  // RSS, TELEGRAM, API
+  author        String?  @db.VarChar(255)
+  thumbnail     String?  @db.VarChar(1000)
+
+  // Social Media Source
+  platform      String?  @db.VarChar(50)  // TELEGRAM, X
+  channelId     Int?     @map("channel_id")
+  originalMessageId String? @map("original_message_id") @db.VarChar(255)
+  isRepost      Boolean  @default(false) @map("is_repost")
+  originalSourceId String? @map("original_source_id") @db.VarChar(255)
+  channelCredibilityScore Float? @map("channel_credibility_score")
+
+  // Classification
+  category      String   @db.VarChar(50)  // WAR, SECURITY
+  subCategory   String   @map("sub_category") @db.VarChar(50)  // ru-uk, is-ir, etc.
+
+  // Location (extracted from Stage 1)
+  locationLat   Float?   @map("location_lat")
+  locationLng   Float?   @map("location_lng")
+  locationName  String?  @map("location_name") @db.VarChar(255)
+
+  // Overall Verification Status
+  credibilityScore    Int?     @map("credibility_score")  // 0-100
+  verificationStatus  String?  @map("verification_status") @db.VarChar(50)
+  verificationError   Boolean  @default(false) @map("verification_error")
+  errorMessage        String?  @map("error_message") @db.Text
+  stagesCompleted     Int      @default(0) @map("stages_completed")
+  skippedAtStage      Int?     @map("skipped_at_stage")
+  skipReason          String?  @map("skip_reason") @db.VarChar(255)
+  processingTimeMs    Int      @default(0) @map("processing_time_ms")
+  tokensUsed          Int      @default(0) @map("tokens_used")
+
+  // Stage 0: Preprocessing Results
+  stage0Completed     Boolean  @default(false) @map("stage0_completed")
+  normalizedText      String?  @map("normalized_text") @db.Text
+  extractedCoordinates String? @map("extracted_coordinates") @db.Text  // JSON
+  detectedTerminology String?  @map("detected_terminology") @db.Text  // JSON
+
+  // Stage 1: NLP Results
+  stage1Completed     Boolean  @default(false) @map("stage1_completed")
+  stage1Score         Float?   @map("stage1_score")
+  stage1HasLocation   Boolean  @default(false) @map("stage1_has_location")
+  stage1IsDuplicate   Boolean  @default(false) @map("stage1_is_duplicate")
+  stage1Subjectivity  Float?   @map("stage1_subjectivity")
+  stage1FakeProb      Float?   @map("stage1_fake_prob")
+
+  // Stage 2: RAG Verification Results
+  stage2Completed     Boolean  @default(false) @map("stage2_completed")
+  stage2Verdict       String?  @map("stage2_verdict") @db.VarChar(50)
+  stage2Confidence    Float?   @map("stage2_confidence")
+  stage2EvidenceSummary String? @map("stage2_evidence_summary") @db.Text
+
+  // Stage 3: LLM Results
+  stage3Completed     Boolean  @default(false) @map("stage3_completed")
+  stage3Verdict       String?  @map("stage3_verdict") @db.VarChar(50)
+  stage3Confidence    Float?   @map("stage3_confidence")
+  stage3Reasoning     String?  @map("stage3_reasoning") @db.Text
+
+  // Embedding for duplicate detection (stored as JSON since Prisma doesn't support pgvector natively)
+  // Note: Use raw SQL or pgvector extension for vector operations
+  // embedding        Unsupported("vector(1024)")?
+
+  // Publishable Status
+  isPublishable       Boolean  @default(false) @map("is_publishable")
+
+  // Timestamps
+  publishedAt         DateTime @map("published_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  channel             Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  @@index([platform])
+  @@index([channelId])
+  @@index([category])
+  @@index([subCategory])
+  @@index([isPublishable])
+  @@map("feeds")
+}
