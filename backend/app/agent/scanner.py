@@ -370,8 +370,15 @@ class MultiSourceScanner:
         )
         self._matcher_initialized = False
 
-        # LLM (최종 분류용)
-        if agent_settings.openai_api_key:
+        # LLM (최종 분류용 — Groq 무료)
+        if agent_settings.groq_api_key:
+            self.llm = ChatOpenAI(
+                model=agent_settings.groq_model,
+                temperature=0.1,
+                api_key=agent_settings.groq_api_key,
+                base_url=agent_settings.groq_base_url,
+            )
+        elif agent_settings.openai_api_key:
             self.llm = ChatOpenAI(
                 model=agent_settings.llm_model,
                 temperature=0.1,

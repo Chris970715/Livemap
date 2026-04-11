@@ -258,7 +258,7 @@ class QAVerifier:
         llm_timeout: float = 60.0,
         max_concurrent_verifications: int = 3,
     ):
-        self.model = model or agent_settings.llm_model
+        self.model = model or agent_settings.groq_model
         self.temperature = temperature
         self.max_evidence_chars = max_evidence_chars
         self.llm_timeout = llm_timeout
@@ -270,7 +270,8 @@ class QAVerifier:
         self.llm = ChatOpenAI(
             model=self.model,
             temperature=self.temperature,
-            api_key=agent_settings.openai_api_key,
+            api_key=agent_settings.groq_api_key,
+            base_url=agent_settings.groq_base_url,
         )
 
     async def verify_claim(

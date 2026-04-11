@@ -50,18 +50,20 @@ class InvestigationAgent:
     """
 
     def __init__(self):
-        # LLM (저렴한 모델) - 도구 바인딩 버전 (executor용)
+        # LLM (Groq 무료) - 도구 바인딩 버전 (executor용)
         self.llm = ChatOpenAI(
-            model=agent_settings.llm_model,
+            model=agent_settings.groq_model,
             temperature=agent_settings.llm_temperature,
-            api_key=agent_settings.openai_api_key,
+            api_key=agent_settings.groq_api_key,
+            base_url=agent_settings.groq_base_url,
         ).bind_tools(INVESTIGATOR_TOOLS)
 
         # LLM (도구 없음) - 검증/발행용
         self.llm_no_tools = ChatOpenAI(
-            model=agent_settings.llm_model,
+            model=agent_settings.groq_model,
             temperature=agent_settings.llm_temperature,
-            api_key=agent_settings.openai_api_key,
+            api_key=agent_settings.groq_api_key,
+            base_url=agent_settings.groq_base_url,
         )
 
         # 그래프 구성

@@ -25,8 +25,8 @@ class AgentSettings(BaseSettings):
     # Tavily 검색 (무료 1,000회/월)
     tavily_api_key: str = ""
 
-    # P1: Brave Search (무료 2,000회/월)
-    brave_enabled: bool = True  # P0: Added for consistency with other triggers
+    # Brave Search (키 없으면 비활성화)
+    brave_enabled: bool = False
     brave_api_key: str = ""
 
     # ===========================================
@@ -57,8 +57,8 @@ class AgentSettings(BaseSettings):
     # 멀티소스 트리거 설정 (Phase 1-4)
     # ===========================================
 
-    # GDELT Anomaly Detection
-    gdelt_anomaly_enabled: bool = True
+    # GDELT Anomaly Detection (비용 최적화: 비활성화)
+    gdelt_anomaly_enabled: bool = False
     gdelt_use_gkg_themes: bool = True
     gdelt_tone_threshold: float = -5.0  # Goldstein proxy
 
@@ -73,11 +73,11 @@ class AgentSettings(BaseSettings):
     google_trends_enabled: bool = False  # 429 rate limit 심함 - 비활성화
     google_trends_geo: str = "US"
 
-    # News APIs (Tier-2) - P1: Enabled by default (requires API keys)
-    currents_enabled: bool = True  # P1: Enable if API key provided
+    # News APIs (Tier-2) - 키 없으면 비활성화
+    currents_enabled: bool = False
     currents_api_key: str = ""
 
-    worldnews_enabled: bool = True  # P1: Enable if API key provided
+    worldnews_enabled: bool = False
     worldnews_api_key: str = ""
 
     # Specialized APIs (Tier-1/2)
@@ -193,16 +193,25 @@ class AgentSettings(BaseSettings):
     investigation_timeout_seconds: float = 300.0  # 5 minutes
 
     # ===========================================
-    # LLM Classifier Settings (Deepinfra)
+    # Groq (무료 14,400 RPD — 분류/검증용)
+    # ===========================================
+    groq_api_key: str = ""
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    groq_model: str = "llama-3.1-8b-instant"
+
+    # ===========================================
+    # Gemini (무료 1,000 RPD — 기사 생성용)
+    # ===========================================
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash-lite"
+
+    # ===========================================
+    # LLM Classifier Settings (Groq)
     # ===========================================
     # Enable/disable LLM-based news classification
     llm_classifier_enabled: bool = True
 
-    # Deepinfra API for cost-effective LLM inference
-    # Cost: ~$3-5/month for ~2000 articles/day
-    deepinfra_api_key: str = ""
-    deepinfra_base_url: str = "https://api.deepinfra.com/v1/openai"
-    llm_classifier_model: str = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+    llm_classifier_model: str = "llama-3.1-8b-instant"
 
     # Classification settings
     llm_classifier_batch_size: int = 20  # Process articles in batches
