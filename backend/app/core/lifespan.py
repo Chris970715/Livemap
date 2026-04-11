@@ -195,7 +195,7 @@ async def run_scheduled_scan():
 
         # Start investigation for each significant event (using v3 Claim-Level Agent)
         agent = ClaimVerificationAgent()
-        max_investigations = 10  # Limit per scan (increased: parallel execution)
+        max_investigations = 5  # Limit per scan (reduced for cost optimization)
         investigation_count = 0
 
         for i, event in enumerate(events):
@@ -514,16 +514,22 @@ async def lifespan(app: FastAPI):
     # Clean up old logs (keep last 7 days)
     cleanup_old_logs(keep_days=7)
 
-    # Validate required configuration
-    if not agent_settings.openai_api_key:
+    # Validate required configuration — Groq OR OpenAI must be set
+    if not agent_settings.groq_api_key and not agent_settings.openai_api_key:
         raise RuntimeError(
-            "OPENAI_API_KEY is required. Please set it in your environment or .env file."
+            "Either AGENT_GROQ_API_KEY or AGENT_OPENAI_API_KEY is required. "
+            "Please set one in your environment or .env file."
         )
+
+    # Determine which LLM provider is active
+    llm_provider = "Groq (free)" if agent_settings.groq_api_key else "OpenAI"
+    gen_provider = "Gemini (free)" if agent_settings.gemini_api_key else llm_provider
 
     print("\n" + "=" * 60)
     print("  LIVEMAP API - Multi-Source News Agent")
     print("=" * 60)
-    print(f"  LLM Model: {agent_settings.llm_model}")
+    print(f"  Classification/Verification: {llm_provider}")
+    print(f"  Article Generation: {gen_provider}")
     print(f"  Scan Interval: {agent_settings.scan_interval_minutes} min")
     print("-" * 60)
     print("  [Tier-1 Sources]")

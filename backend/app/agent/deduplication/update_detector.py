@@ -113,12 +113,13 @@ class UpdateDetector:
         temperature: float = 0.1,
         llm_timeout: float = 30.0,
     ):
-        self.model = model or agent_settings.llm_model
+        self.model = model or agent_settings.groq_model
         self.llm_timeout = llm_timeout
         self.llm = ChatOpenAI(
             model=self.model,
             temperature=temperature,
-            api_key=agent_settings.openai_api_key,
+            api_key=agent_settings.groq_api_key,
+            base_url=agent_settings.groq_base_url,
         )
 
     async def check_for_update(

@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
@@ -240,13 +241,23 @@ class BilingualArticleGenerator:
         temperature: float = 0.3,
         llm_timeout: float = 90.0,  # Longer timeout for bilingual
     ):
-        self.model = model or agent_settings.llm_model
         self.llm_timeout = llm_timeout
-        self.llm = ChatOpenAI(
-            model=self.model,
-            temperature=temperature,
-            api_key=agent_settings.openai_api_key,
-        )
+        # Use Gemini for article generation (free 1,000 RPD)
+        if agent_settings.gemini_api_key:
+            self.model = model or agent_settings.gemini_model
+            self.llm = ChatGoogleGenerativeAI(
+                model=self.model,
+                temperature=temperature,
+                google_api_key=agent_settings.gemini_api_key,
+            )
+        else:
+            # Fallback to OpenAI
+            self.model = model or agent_settings.llm_model
+            self.llm = ChatOpenAI(
+                model=self.model,
+                temperature=temperature,
+                api_key=agent_settings.openai_api_key,
+            )
 
     async def generate(
         self,

@@ -1,5 +1,5 @@
 """
-LLM-based News Classifier using Deepinfra
+LLM-based News Classifier using Groq (free tier: 14,400 RPD)
 
 Replaces pattern-based filtering (patterns.py, checkworthiness.py, specificity.py)
 with a single LLM call that handles:
@@ -8,7 +8,7 @@ with a single LLM call that handles:
 3. IS_SIGNIFICANT: Is this internationally significant?
 4. TEMPORAL_CATEGORY: Temporal classification (breaking, developing, retrospective, predictive, timeless)
 
-Cost: ~$3-5/month for ~2000 articles/day using Llama 3.1 8B
+Cost: $0/month using Groq free tier (Llama 3.1 8B, 14,400 RPD)
 
 Phase 6: Temporal Classification Enhancement
 - Added TemporalCategory enum for 5-class temporal classification
@@ -163,7 +163,7 @@ Articles to classify:
 
 class LLMClassifier:
     """
-    LLM-based news classifier using Deepinfra API.
+    LLM-based news classifier using Groq API (free tier).
 
     Replaces pattern-based filtering with a single LLM call per batch.
     """
@@ -180,14 +180,14 @@ class LLMClassifier:
         Initialize LLM classifier.
 
         Args:
-            api_key: Deepinfra API key (defaults to config)
+            api_key: Groq API key (defaults to config)
             base_url: API base URL (defaults to config)
             model: Model to use (defaults to config)
             batch_size: Articles per batch (defaults to config)
             timeout: Request timeout in seconds (defaults to config)
         """
-        self.api_key = api_key or agent_settings.deepinfra_api_key
-        self.base_url = base_url or agent_settings.deepinfra_base_url
+        self.api_key = api_key or agent_settings.groq_api_key
+        self.base_url = base_url or agent_settings.groq_base_url
         self.model = model or agent_settings.llm_classifier_model
         self.batch_size = batch_size or agent_settings.llm_classifier_batch_size
         self.timeout = timeout or agent_settings.llm_classifier_timeout

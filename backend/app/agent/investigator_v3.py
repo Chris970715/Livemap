@@ -93,8 +93,8 @@ logger = logging.getLogger(__name__)
 class V3Config:
     """Configuration for Claim-Level Verification Agent."""
 
-    # Claim extraction
-    MAX_CLAIMS: int = 10
+    # Claim extraction (reduced from 10 for speed — Groq free tier has ample quota)
+    MAX_CLAIMS: int = 3
 
     # Evidence retrieval
     MAX_EVIDENCE_PER_CLAIM: int = 10
