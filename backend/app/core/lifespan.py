@@ -387,7 +387,7 @@ async def run_scheduled_scan():
                                 notify_new_article({
                                     "event": "new_article",
                                     "id": saved_article.id,
-                                    "title": saved_article.headline_ko or saved_article.headline_en or "",
+                                    "title": saved_article.headline_en or saved_article.headline_ko or "",
                                     "category": get_client_category(category),
                                     "isBreaking": True,
                                 })

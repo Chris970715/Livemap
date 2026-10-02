@@ -47,14 +47,14 @@ def _get_mock_feeds() -> list[dict]:
     return [
         {
             "id": 1,
-            "title": "우크라이나 동부 도네츠크 전선에서 러시아군 전술적 전진",
-            "content": "러시아군이 도네츠크 지역에서 전술적 전진을 이루었다고 복수의 소식통이 전했다. 우크라이나군은 방어 진지를 강화하고 있으며, 포카로프스크 방향으로의 공세가 계속되고 있다. ACLED 데이터에 따르면 지난 24시간 동안 해당 지역에서 47건의 교전이 보고되었다.",
+            "title": "Russian forces make tactical gains on the Donetsk front in eastern Ukraine",
+            "content": "Russian forces have made tactical advances in the Donetsk region, according to multiple sources. Ukrainian troops are reinforcing defensive positions as the offensive toward Pokrovsk continues. ACLED data shows 47 clashes reported in the area over the past 24 hours.",
             "originalLink": "https://www.reuters.com/world/europe/",
             "sourceName": "Reuters",
             "sourceType": "RSS",
             "publishedAt": now - timedelta(hours=1, minutes=23),
             "author": "Reuters Staff",
-            "thumbnail": "https://images.unsplash.com/photo-1569025743873-ea3a9ber4f79?w=400&h=300&fit=crop",
+            "thumbnail": None,
             "category": "WAR",
             "subCategory": "ru-uk",
             "location": {"lat": 48.0159, "lng": 37.8028, "name": "Donetsk, Ukraine"},
@@ -63,8 +63,8 @@ def _get_mock_feeds() -> list[dict]:
         },
         {
             "id": 2,
-            "title": "하르키우시에 미사일 공격, 민간인 피해 발생",
-            "content": "하르키우시에 다수의 미사일 공격이 보고되었다. 긴급 구조대가 현장에 출동했으며, 주거 지역에 피해가 발생한 것으로 확인됐다. 우크라이나 공군은 S-300 미사일 2발이 발사되었다고 밝혔다.",
+            "title": "Missile strikes hit Kharkiv, civilian casualties reported",
+            "content": "Multiple missile strikes were reported in Kharkiv. Emergency crews were dispatched and damage to residential areas has been confirmed. Ukraine's air force said two S-300 missiles were launched.",
             "originalLink": "https://t.me/truexanewsua",
             "sourceName": "Telegram",
             "sourceType": "TELEGRAM",
@@ -79,8 +79,8 @@ def _get_mock_feeds() -> list[dict]:
         },
         {
             "id": 3,
-            "title": "이스라엘군, 레바논 남부 헤즈볼라 거점 공습",
-            "content": "이스라엘 방위군(IDF)이 레바논 남부의 헤즈볼라 거점을 대상으로 공습을 실시했다. IDF 대변인은 무기 저장소와 발사대를 목표로 한 정밀 타격이었다고 발표했다. 레바논 당국은 민간인 피해 여부를 조사 중이다.",
+            "title": "Israeli military strikes Hezbollah positions in southern Lebanon",
+            "content": "The Israel Defense Forces carried out airstrikes on Hezbollah positions in southern Lebanon. An IDF spokesperson said the precision strikes targeted weapons depots and launchers. Lebanese authorities are investigating possible civilian casualties.",
             "originalLink": "https://www.aljazeera.com/news/",
             "sourceName": "Al Jazeera",
             "sourceType": "RSS",
@@ -95,8 +95,8 @@ def _get_mock_feeds() -> list[dict]:
         },
         {
             "id": 4,
-            "title": "북한, DMZ 인근에서 대규모 포병 훈련 실시",
-            "content": "북한군이 비무장지대(DMZ) 인근에서 대규모 포병 훈련을 실시했다. 한국 합참은 북한의 군사 활동을 면밀히 감시하고 있다고 밝혔다. 훈련은 약 3시간 동안 진행된 것으로 파악된다.",
+            "title": "North Korea holds large-scale artillery drills near the DMZ",
+            "content": "North Korean forces conducted large-scale artillery drills near the Demilitarized Zone. South Korea's Joint Chiefs of Staff said they are closely monitoring the activity. The drills reportedly lasted about three hours.",
             "originalLink": "https://en.yna.co.kr/",
             "sourceName": "Yonhap",
             "sourceType": "RSS",
@@ -111,8 +111,8 @@ def _get_mock_feeds() -> list[dict]:
         },
         {
             "id": 5,
-            "title": "미 해군 구축함, 남중국해 항행의 자유 작전 실시",
-            "content": "미 해군 알레이 버크급 구축함이 남중국해에서 항행의 자유 작전(FONOP)을 실시했다. 중국 외교부는 이를 '도발 행위'로 규정하며 강력히 항의했다. 미 태평양함대 사령부는 국제법에 따른 정상적인 작전이라고 밝혔다.",
+            "title": "US Navy destroyer conducts freedom of navigation operation in the South China Sea",
+            "content": "A US Navy Arleigh Burke-class destroyer conducted a freedom of navigation operation (FONOP) in the South China Sea. China's foreign ministry called it a 'provocation' and lodged a strong protest. The US Pacific Fleet said it was a routine operation under international law.",
             "originalLink": "https://www.navy.mil/",
             "sourceName": "US Navy",
             "sourceType": "RSS",
@@ -211,7 +211,7 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
             pass
 
     # Derive source name from related sources
-    source_name = "Livemap AI"
+    source_name = "Huginn AI"
     if related_sources:
         first_source = related_sources[0].get("sourceName", "")
         if first_source:
@@ -228,7 +228,7 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
 
     return {
         "id": article.id,
-        "title": headline or "Untitled",
+        "title": article.headline_en or headline or "Untitled",
         "content": None,
         "originalLink": original_link,
         "sourceName": source_name,

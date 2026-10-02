@@ -64,15 +64,15 @@ export function SignInForm({ callbackUrl, demoEmail, demoPassword }: SignInFormP
           className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
         >
           <X className="h-6 w-6" />
-          <span className="sr-only">홈으로 돌아가기</span>
+          <span className="sr-only">Back to home</span>
         </Link>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">로그인</CardTitle>
-          <CardDescription>데모 계정으로 바로 둘러보세요</CardDescription>
+          <CardTitle className="text-2xl">Log in</CardTitle>
+          <CardDescription>Explore Huginn instantly with the demo account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button className="w-full" onClick={handleDemoSignIn} disabled={isDemoPending}>
-            {isDemoPending ? "로그인 중..." : "데모 계정으로 시작하기"}
+            {isDemoPending ? "Signing in..." : "Continue with demo account"}
           </Button>
 
           <div className="relative">
@@ -80,13 +80,13 @@ export function SignInForm({ callbackUrl, demoEmail, demoPassword }: SignInFormP
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">또는 이메일로 로그인</span>
+              <span className="bg-card px-2 text-muted-foreground">or sign in with email</span>
             </div>
           </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -99,7 +99,7 @@ export function SignInForm({ callbackUrl, demoEmail, demoPassword }: SignInFormP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" {...form.register("password")} />
               {form.formState.errors.password && (
                 <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
@@ -112,12 +112,12 @@ export function SignInForm({ callbackUrl, demoEmail, demoPassword }: SignInFormP
               className="w-full"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? "로그인 중..." : "로그인"}
+              {form.formState.isSubmitting ? "Signing in..." : "Log in"}
             </Button>
           </form>
 
           <p className="text-center text-xs text-muted-foreground">
-            데모 계정: {demoEmail} / {demoPassword}
+            Demo account: {demoEmail} / {demoPassword}
           </p>
         </CardContent>
       </Card>

@@ -8,11 +8,13 @@ import "leaflet/dist/leaflet.css";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 
 import type { FeedItem } from "@/lib/types/feed";
+import { getFeedHeadline } from "@/lib/utils";
 import {
   mapCenterAtom,
   selectedFeedAtom,
   isModalOpenAtom,
   securitySubCategoryAtom,
+  languageAtom,
 } from "@/lib/store";
 
 function createCategoryIcon(category: string, verified: boolean) {
@@ -70,6 +72,7 @@ export function SecurityMapClient({ feeds: allFeeds }: SecurityMapClientProps) {
   );
   const [center] = useAtom(mapCenterAtom);
   const subCategory = useAtomValue(securitySubCategoryAtom);
+  const lang = useAtomValue(languageAtom);
   const setSelectedFeed = useSetAtom(selectedFeedAtom);
   const setIsModalOpen = useSetAtom(isModalOpenAtom);
   const isShowAll = subCategory === "";
@@ -108,10 +111,10 @@ export function SecurityMapClient({ feeds: allFeeds }: SecurityMapClientProps) {
         >
           <Popup>
             <div className="p-2">
-              <h3 className="font-semibold text-sm mb-1">{feed.title}</h3>
+              <h3 className="font-semibold text-sm mb-1">{getFeedHeadline(feed, lang)}</h3>
               <p className="text-xs text-gray-600 mb-1">{feed.location.name}</p>
               <p className="text-xs text-gray-500">
-                {new Date(feed.publishedAt).toLocaleDateString()}
+                {new Date(feed.publishedAt).toLocaleDateString("en-US")}
               </p>
             </div>
           </Popup>

@@ -8,22 +8,29 @@ import type { ArticleStructure } from "@/lib/types/feed";
 
 function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, "0")}월 ${String(d.getDate()).padStart(2, "0")}일 ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 function VerificationBadge({ status, score }: { status?: string; score?: number }) {
   const config = {
-    verified: { label: "검증됨", bg: "bg-green-900/50", text: "text-green-400", icon: "✓" },
+    verified: { label: "Verified", bg: "bg-green-900/50", text: "text-green-400", icon: "✓" },
     partially_verified: {
-      label: "부분 검증",
+      label: "Partially verified",
       bg: "bg-yellow-900/50",
       text: "text-yellow-400",
       icon: "◐",
     },
-    unverified: { label: "미검증", bg: "bg-gray-800", text: "text-gray-400", icon: "?" },
-    pending: { label: "검증 중", bg: "bg-gray-800", text: "text-gray-500", icon: "⋯" },
+    unverified: { label: "Unverified", bg: "bg-gray-800", text: "text-gray-400", icon: "?" },
+    pending: { label: "Verifying", bg: "bg-gray-800", text: "text-gray-500", icon: "⋯" },
   }[status || "pending"] || {
-    label: "검증 중",
+    label: "Verifying",
     bg: "bg-gray-800",
     text: "text-gray-500",
     icon: "⋯",
@@ -174,7 +181,7 @@ export function FeedModal() {
           <div className="flex items-center gap-3 mb-4">
             <VerificationBadge status={feed.verificationStatus} score={feed.credibilityScore} />
             <span className="px-2.5 py-0.5 bg-gray-800 rounded-full text-xs text-gray-400">
-              {feed.category === "WAR" ? "전쟁" : "안보"}
+              {feed.category === "WAR" ? "War" : "Security"}
             </span>
             {feed.isBreaking && (
               <span className="px-2.5 py-0.5 bg-red-900/50 rounded-full text-xs text-red-400 animate-pulse">

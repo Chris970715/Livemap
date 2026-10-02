@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LiveMap - 실시간 안보 정보",
-  description: "실시간 안보 정보와 지도를 제공하는 서비스",
+  title: "Huginn — Real-time Security Intelligence",
+  description: "AI-verified war and security news, mapped in real time",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="dark">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         style={{ backgroundColor: "#17171c" }}

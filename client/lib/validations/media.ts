@@ -47,11 +47,11 @@ function isValidVideoFile(type: string, filename: string): boolean {
 export const videoFileSchema = z
   .object({
     type: z.string(),
-    size: z.number().max(MAX_VIDEO_FILE_SIZE, "파일 크기는 300MB를 초과할 수 없습니다."),
+    size: z.number().max(MAX_VIDEO_FILE_SIZE, "File size cannot exceed 300MB."),
     filename: z.string(),
   })
   .refine((data) => isValidVideoFile(data.type, data.filename), {
-    message: "지원하지 않는 파일 형식입니다. (MP4, WebM, MOV, AVI, MKV, M4V만 가능)",
+    message: "Unsupported file type. (MP4, WebM, MOV, AVI, MKV, M4V only)",
     path: ["type"],
   });
 
@@ -72,7 +72,7 @@ export function validateVideoFile(file: File): FileValidation {
   if (!result.success) {
     return {
       valid: false,
-      error: result.error.issues[0]?.message ?? "파일 검증에 실패했습니다.",
+      error: result.error.issues[0]?.message ?? "File validation failed.",
     };
   }
 
@@ -99,11 +99,11 @@ function isValidImageFile(type: string, filename: string): boolean {
 export const imageFileSchema = z
   .object({
     type: z.string(),
-    size: z.number().max(MAX_IMAGE_FILE_SIZE, "파일 크기는 10MB를 초과할 수 없습니다."),
+    size: z.number().max(MAX_IMAGE_FILE_SIZE, "File size cannot exceed 10MB."),
     filename: z.string(),
   })
   .refine((data) => isValidImageFile(data.type, data.filename), {
-    message: "지원하지 않는 파일 형식입니다. (JPG, PNG, GIF, WebP만 가능)",
+    message: "Unsupported file type. (JPG, PNG, GIF, WebP only)",
     path: ["type"],
   });
 
@@ -120,7 +120,7 @@ export function validateImageFile(file: File): FileValidation {
   if (!result.success) {
     return {
       valid: false,
-      error: result.error.issues[0]?.message ?? "파일 검증에 실패했습니다.",
+      error: result.error.issues[0]?.message ?? "File validation failed.",
     };
   }
 

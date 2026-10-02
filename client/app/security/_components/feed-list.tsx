@@ -3,7 +3,7 @@
 import { useSetAtom, useAtomValue } from "jotai";
 
 import type { FeedItem } from "@/lib/types/feed";
-import { formatTimeAgo } from "@/lib/utils";
+import { formatTimeAgo, getFeedHeadline } from "@/lib/utils";
 import { selectedFeedAtom, isModalOpenAtom, languageAtom } from "@/lib/store";
 
 interface FeedListProps {
@@ -16,14 +16,9 @@ export function FeedList({ feeds, isLoading }: FeedListProps) {
   const setIsModalOpen = useSetAtom(isModalOpenAtom);
   const lang = useAtomValue(languageAtom);
 
-  const getHeadline = (feed: FeedItem) => {
-    if (lang === "en" && feed.articleEn?.headline) return feed.articleEn.headline;
-    return feed.article?.headline || feed.title;
-  };
-
   return (
     <div className="h-full overflow-y-auto scrollbar-hide">
-      {isLoading && <div className="text-gray-400 text-sm mb-2 px-2">불러오는 중...</div>}
+      {isLoading && <div className="text-gray-400 text-sm mb-2 px-2">Loading...</div>}
       <div className="space-y-1">
         {feeds.map((feed) => (
           <div
@@ -42,7 +37,7 @@ export function FeedList({ feeds, isLoading }: FeedListProps) {
             <div className="flex gap-3">
               <div className="flex-1 min-w-0">
                 <h3 className="text-white font-semibold text-sm line-clamp-2 mb-1.5">
-                  {getHeadline(feed)}
+                  {getFeedHeadline(feed, lang)}
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
                   {feed.isBreaking && <span className="text-red-400 font-bold">LIVE</span>}

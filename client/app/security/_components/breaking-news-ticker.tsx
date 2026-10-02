@@ -3,6 +3,7 @@
 import { useAtomValue } from "jotai";
 
 import { feedsListAtom, languageAtom } from "@/lib/store";
+import { getFeedHeadline } from "@/lib/utils";
 
 export function BreakingNewsTicker() {
   const feeds = useAtomValue(feedsListAtom);
@@ -19,10 +20,7 @@ export function BreakingNewsTicker() {
       </div>
       <div className="ml-24 flex items-center h-full animate-ticker whitespace-nowrap">
         {breaking.map((feed) => {
-          const headline =
-            lang === "en" && feed.articleEn?.headline
-              ? feed.articleEn.headline
-              : feed.article?.headline || feed.title;
+          const headline = getFeedHeadline(feed, lang);
           return (
             <span key={feed.id} className="text-red-200 text-sm mr-12">
               {headline}
@@ -31,10 +29,7 @@ export function BreakingNewsTicker() {
         })}
         {/* Duplicate for seamless loop */}
         {breaking.map((feed) => {
-          const headline =
-            lang === "en" && feed.articleEn?.headline
-              ? feed.articleEn.headline
-              : feed.article?.headline || feed.title;
+          const headline = getFeedHeadline(feed, lang);
           return (
             <span key={`${feed.id}-loop`} className="text-red-200 text-sm mr-12">
               {headline}

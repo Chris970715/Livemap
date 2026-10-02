@@ -5,7 +5,7 @@ import { atom } from "jotai";
 import type { FeedItem } from "@/lib/types/feed";
 
 // Security 카테고리 상태
-export const securityCategoryAtom = atom<"전쟁" | "안보">("전쟁");
+export const securityCategoryAtom = atom<"WAR" | "SECURITY">("WAR");
 
 // 서브카테고리 상태
 export const securitySubCategoryAtom = atom<string>("");
@@ -20,7 +20,7 @@ export const selectedFeedAtom = atom<FeedItem | null>(null);
 export const isModalOpenAtom = atom<boolean>(false);
 
 // 언어 설정
-export const languageAtom = atom<"ko" | "en">("ko");
+export const languageAtom = atom<"ko" | "en">("en");
 
 // 검색 쿼리
 export const searchQueryAtom = atom<string>("");
@@ -30,7 +30,7 @@ export const feedsListAtom = atom<FeedItem[]>([]);
 
 // 파생 atom: API 필터
 export const securityFeedFiltersAtom = atom((get) => ({
-  category: get(securityCategoryAtom) === "전쟁" ? ("WAR" as const) : ("SECURITY" as const),
+  category: get(securityCategoryAtom),
   subCategory: get(securitySubCategoryAtom),
   q: get(searchQueryAtom) || undefined,
 }));

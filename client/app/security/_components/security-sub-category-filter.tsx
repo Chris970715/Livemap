@@ -9,14 +9,14 @@ const warSubCategories = [
   {
     id: "ru-uk",
     name: "russia-ukraine",
-    label: "러시아 - 우크라이나",
+    label: "Russia - Ukraine",
     countries: ["RU", "UA"],
     center: [50.0, 30.0] as [number, number],
   },
   {
     id: "is-ir",
     name: "israel-iran",
-    label: "이스라엘 - 이란",
+    label: "Israel - Iran",
     countries: ["IL", "IR"],
     center: [32.0, 53.0] as [number, number],
   },
@@ -26,28 +26,28 @@ const securitySubCategories = [
   {
     id: "KOREA",
     name: "korea",
-    label: "한국",
+    label: "Korea",
     countries: ["KR"],
     center: [36.5, 127.5] as [number, number],
   },
   {
     id: "US",
     name: "us",
-    label: "미국",
+    label: "US",
     countries: ["US"],
     center: [39.0, -98.0] as [number, number],
   },
   {
     id: "CHINA",
     name: "china",
-    label: "중국",
+    label: "China",
     countries: ["CN"],
     center: [35.0, 105.0] as [number, number],
   },
   {
     id: "JAPAN",
     name: "japan",
-    label: "일본",
+    label: "Japan",
     countries: ["JP"],
     center: [36.0, 138.0] as [number, number],
   },
@@ -65,9 +65,9 @@ export function SecuritySubCategoryFilter() {
     }
   };
 
-  const subCategories = securityCategory === "전쟁" ? warSubCategories : securitySubCategories;
+  const subCategories = securityCategory === "WAR" ? warSubCategories : securitySubCategories;
 
-  const allCenter: [number, number] = securityCategory === "전쟁" ? [30.0, 40.0] : [30.0, 100.0];
+  const allCenter: [number, number] = securityCategory === "WAR" ? [30.0, 40.0] : [30.0, 100.0];
 
   return (
     <div className="flex justify-start mb-4 overflow-x-auto scrollbar-hide">
@@ -83,7 +83,7 @@ export function SecuritySubCategoryFilter() {
           }}
           onClick={() => handleSubCategoryClick("", allCenter)}
         >
-          전체
+          All
         </div>
         {subCategories.map((subCategory) => (
           <div
@@ -100,7 +100,7 @@ export function SecuritySubCategoryFilter() {
             onClick={() => handleSubCategoryClick(subCategory.id, subCategory.center)}
           >
             <div className="flex items-center gap-1">
-              {securityCategory === "전쟁" ? (
+              {securityCategory === "WAR" ? (
                 (() => {
                   const [left, right] = subCategory.label.split(" - ");
                   return (

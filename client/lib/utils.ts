@@ -1,12 +1,14 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import type { FeedItem } from "@/lib/types/feed";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 /**
- * 상대 시간 포맷 (예: "방금 전", "3시간 전")
+ * Relative time (e.g. "just now", "3h ago")
  */
 export function formatTimeAgo(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
@@ -16,10 +18,19 @@ export function formatTimeAgo(date: Date | string): string {
   const diffHour = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
 
-  if (diffMin < 1) return "방금 전";
-  if (diffMin < 60) return `${diffMin}분 전`;
-  if (diffHour < 24) return `${diffHour}시간 전`;
-  if (diffDay < 7) return `${diffDay}일 전`;
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
 
-  return d.toLocaleDateString("ko-KR");
+  return d.toLocaleDateString("en-US");
+}
+
+/**
+ * Headline in the selected article language
+ * (falls back to the Korean article, then the raw title)
+ */
+export function getFeedHeadline(feed: FeedItem, lang: "ko" | "en"): string {
+  if (lang === "en" && feed.articleEn?.headline) return feed.articleEn.headline;
+  return feed.article?.headline || feed.title;
 }

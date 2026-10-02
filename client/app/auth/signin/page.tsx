@@ -4,7 +4,7 @@ import { DEMO_USER } from "@/lib/auth/demo";
 import { SignInForm } from "./_components/sign-in-form";
 
 export const metadata: Metadata = {
-  title: "로그인 | LiveMap",
+  title: "Log in | Huginn",
 };
 
 interface SignInPageProps {

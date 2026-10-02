@@ -9,10 +9,10 @@ import { languageAtom } from "@/lib/store";
 import { AuthButton } from "./auth-button";
 
 const NAV_ITEMS = [
-  { name: "정치", path: "/politics" },
-  { name: "경제", path: "/economy" },
-  { name: "안보", path: "/security" },
-  { name: "기술/IT", path: "/tech" },
+  { name: "Politics", path: "/politics" },
+  { name: "Economy", path: "/economy" },
+  { name: "Security", path: "/security" },
+  { name: "Tech", path: "/tech" },
 ] as const;
 
 export function Header() {
@@ -73,6 +73,7 @@ export function Header() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setLang(lang === "ko" ? "en" : "ko")}
+              title="Article language"
               className="px-2.5 py-1 text-xs font-mono rounded border border-gray-600 text-gray-300 hover:text-white hover:border-gray-400 transition-colors"
             >
               {lang === "ko" ? "EN" : "KO"}

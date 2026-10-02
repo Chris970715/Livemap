@@ -41,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         // 이메일 또는 비밀번호가 필요합니다.
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("이메일 또는 비밀번호가 필요합니다.");
+          throw new Error("Email and password are required.");
         }
 
         const user = await prisma.user.findUnique({
@@ -50,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // 사용자가 존재하지 않거나 비밀번호가 없는 경우
         if (!user || !user.hashedPassword) {
-          throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+          throw new Error("Invalid email or password.");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -60,7 +60,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // 비밀번호가 일치하지 않는 경우
         if (!isPasswordValid) {
-          throw new Error("이메일 또는 비밀번호가 올바르지 않습니다.");
+          throw new Error("Invalid email or password.");
         }
 
         // 사용자 정보 반환

@@ -11,7 +11,7 @@ const SecurityMapClient = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center bg-gray-900">
-        <div className="text-gray-400">지도 로딩 중...</div>
+        <div className="text-gray-400">Loading map...</div>
       </div>
     ),
   }
