@@ -59,12 +59,13 @@ The fact-check agent runs five stages for each event:
 
 The whole stack runs on free tiers:
 
-| Part     | Service                                                                      |
-| -------- | ---------------------------------------------------------------------------- |
-| Frontend | Vercel — deploys the `dev` branch                                            |
-| Backend  | Render (Docker web service, 512 MB) — [`render.yaml`](render.yaml) blueprint |
-| Database | Neon PostgreSQL with pgvector                                                |
-| LLMs     | Groq and Gemini free tiers                                                   |
+| Part     | Service                                                                             |
+| -------- | ----------------------------------------------------------------------------------- |
+| Frontend | Vercel — deploys the `dev` branch                                                   |
+| Backend  | Render (Docker web service, 512 MB) — [`render.yaml`](render.yaml) blueprint        |
+| Database | Neon PostgreSQL with pgvector                                                       |
+| LLMs     | Groq and Gemini free tiers                                                          |
+| Uptime   | UptimeRobot pings `/health` every 5 minutes so the free Render instance stays awake |
 
 Notes on fitting into free tiers:
 
