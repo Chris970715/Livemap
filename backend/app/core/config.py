@@ -4,6 +4,9 @@ Application configuration using Pydantic Settings.
 Environment variables are loaded from .env file.
 """
 
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -27,8 +30,12 @@ class Settings(BaseSettings):
     # REQUIRED: No default value - must be set in environment
     AUTH_SECRET: str
 
-    # Frontend URL for CORS and cookie settings
+    # Frontend URL for CORS and cookie settings (comma-separated for several origins)
     FRONTEND_URL: str = "http://localhost:3000"
+
+    # Token for manual agent triggers (POST /agent/investigate, /agent/scan).
+    # Unset + DEBUG=false -> those endpoints are disabled.
+    ADMIN_API_TOKEN: str | None = None
 
     # Publishable Criteria
     PUBLISHABLE_MIN_CREDIBILITY: int = 60
@@ -48,6 +55,33 @@ class Settings(BaseSettings):
     # Media Upload Settings
     MEDIA_UPLOAD_MAX_SIZE_MB: int = 100  # Max file size in MB
     MEDIA_PRESIGNED_URL_EXPIRES: int = 3600  # Presigned URL expiry in seconds (1 hour)
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def normalize_database_url(cls, url: str) -> str:
+        """Accept provider URLs (Neon, Render, ...) as-is and adapt them for asyncpg.
+
+        postgres(ql)://...?sslmode=require&channel_binding=require
+          -> postgresql+asyncpg://...?ssl=require
+        """
+        parts = urlsplit(url)
+        scheme = parts.scheme
+        if scheme in ("postgres", "postgresql"):
+            scheme = "postgresql+asyncpg"
+        if scheme != "postgresql+asyncpg":
+            return url
+
+        query = []
+        for key, value in parse_qsl(parts.query):
+            if key == "sslmode":
+                query.append(("ssl", value))
+            elif key != "channel_binding":  # libpq-only option
+                query.append((key, value))
+        return urlunsplit(parts._replace(scheme=scheme, query=urlencode(query)))
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip().rstrip("/") for o in self.FRONTEND_URL.split(",") if o.strip()]
 
     @property
     def s3_enabled(self) -> bool:

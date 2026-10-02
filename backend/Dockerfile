@@ -1,48 +1,33 @@
-# Livemap Backend Dockerfile
-# Optimized for Oracle Cloud Free Tier (ARM64)
+# Huginn Backend — FastAPI + AI news pipeline
+#
+# Sized for small hosts (Render free: 512MB RAM). The local bge-m3 model
+# (torch) is not installed; embeddings come from the Gemini API
+# (AGENT_EMBEDDING_PROVIDER=gemini, see app/agent/embeddings.py).
 
-FROM python:3.13-slim
+FROM python:3.11-slim
 
-# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
 
-# Set working directory
+COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /usr/local/bin/uv
+
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for fast dependency management
-RUN pip install uv
-
-# Copy dependency files
+# Dependencies first for layer caching (no dev / local-embeddings groups)
 COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
 
-# Install Python dependencies
-RUN uv sync --frozen --no-dev
-
-# Download spaCy model
-RUN uv run python -m spacy download en_core_web_lg
-
-# Copy application code
 COPY . .
 
-# Create directories for sessions and cache
-RUN mkdir -p /app/sessions /root/.cache
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/logs \
+    && chown app /app/logs
+USER app
 
-# Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Run the application
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Render injects $PORT; migrations are idempotent and run on every boot
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

@@ -90,7 +90,7 @@ export function SecurityInteractive() {
         <SecuritySubCategoryFilter />
 
         <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 bg-gray-900 rounded-lg overflow-hidden h-[300px] lg:h-[calc(100vh-200px)]">
+          <div className="lg:flex-1 bg-gray-900 rounded-lg overflow-hidden h-[300px] lg:h-[calc(100vh-200px)]">
             <SecurityMap feeds={feeds} />
           </div>
 

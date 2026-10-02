@@ -9,21 +9,29 @@ import Kakao from "next-auth/providers/kakao";
 import prisma from "@/lib/prisma";
 import type { Role } from "@/lib/generated/prisma/client";
 
+// OAuth 공급자는 키가 설정된 경우에만 활성화 (데모 배포는 Credentials만 사용)
+const oauthProviders = [
+  process.env.GOOGLE_CLIENT_ID &&
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  process.env.DISCORD_CLIENT_ID &&
+    Discord({
+      clientId: process.env.DISCORD_CLIENT_ID,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+    }),
+  process.env.KAKAO_CLIENT_ID &&
+    Kakao({
+      clientId: process.env.KAKAO_CLIENT_ID,
+      clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+    }),
+].filter((provider) => !!provider);
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    Discord({
-      clientId: process.env.DISCORD_CLIENT_ID!,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
-    }),
-    Kakao({
-      clientId: process.env.KAKAO_CLIENT_ID!,
-      clientSecret: process.env.KAKAO_CLIENT_SECRET!,
-    }),
+    ...oauthProviders,
     Credentials({
       name: "credentials",
       credentials: {

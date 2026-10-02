@@ -198,6 +198,14 @@ async def run_scheduled_scan():
         max_investigations = 5  # Limit per scan (reduced for cost optimization)
         investigation_count = 0
 
+        # Embed all candidate events in one batched request instead of one per event
+        event_embeddings: dict[str, list[float]] = {}
+        if scanner._matcher_initialized and scanner.cross_source_matcher._encoder:
+            event_embeddings = await asyncio.to_thread(
+                scanner.cross_source_matcher.generate_embeddings_for_texts,
+                [e.get("description") or e.get("title", "Unknown event") for e in events],
+            )
+
         for i, event in enumerate(events):
             if investigation_count >= max_investigations:
                 break
@@ -229,10 +237,8 @@ async def run_scheduled_scan():
                 print(f"[SCANNER] [{i+1}] SKIPPING: Similar to already-published event in this cycle")
                 continue
 
-            # P0 Fix: Generate embedding once for both deduplication and saving
-            event_embedding = None
-            if scanner._matcher_initialized and scanner.cross_source_matcher._encoder:
-                event_embedding = scanner.cross_source_matcher.generate_embedding_for_text(event_desc)
+            # P0 Fix: Generate embedding once for both deduplication and saving (batched above)
+            event_embedding = event_embeddings.get(event_desc)
 
             # === STAGE 1.5: DEDUPLICATION CHECK (NEW) ===
             if agent_settings.dedup_enabled:

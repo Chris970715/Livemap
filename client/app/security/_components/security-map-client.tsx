@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import type { LatLngExpression } from "leaflet";
 import L from "leaflet";
@@ -61,7 +61,13 @@ interface SecurityMapClientProps {
   feeds: FeedItem[];
 }
 
-export function SecurityMapClient({ feeds }: SecurityMapClientProps) {
+export function SecurityMapClient({ feeds: allFeeds }: SecurityMapClientProps) {
+  // Articles without coordinates stay in the list but can't be placed on the map.
+  // Memoized: FitBoundsUpdater refits whenever this array identity changes.
+  const feeds = useMemo(
+    () => allFeeds.filter((f) => f.location?.lat != null && f.location?.lng != null),
+    [allFeeds]
+  );
   const [center] = useAtom(mapCenterAtom);
   const subCategory = useAtomValue(securitySubCategoryAtom);
   const setSelectedFeed = useSetAtom(selectedFeedAtom);
@@ -81,9 +87,11 @@ export function SecurityMapClient({ feeds }: SecurityMapClientProps) {
       ) : (
         center && <MapCenterUpdater center={center} />
       )}
+      {/* CARTO basemaps now require an API key; Esri Dark Gray is keyless */}
       <TileLayer
-        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+        attribution="Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ"
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+        maxZoom={16}
       />
 
       {feeds.map((feed) => (

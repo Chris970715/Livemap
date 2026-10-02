@@ -10,6 +10,8 @@ LLM:
 - GPT-4o-mini 기반 (입력 $0.15/1M, 출력 $0.60/1M)
 """
 
+from typing import Literal
+
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
@@ -204,6 +206,13 @@ class AgentSettings(BaseSettings):
     # ===========================================
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash-lite"
+
+    # ===========================================
+    # Embeddings (semantic dedup / clustering) — see app/agent/embeddings.py
+    # ===========================================
+    # auto: local bge-m3 if sentence-transformers is installed, else Gemini API
+    embedding_provider: Literal["auto", "local", "gemini", "none"] = "auto"
+    gemini_embedding_model: str = "gemini-embedding-001"
 
     # ===========================================
     # LLM Classifier Settings (Groq)

@@ -10,6 +10,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, String, func
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -56,7 +57,13 @@ class User(Base):
     image: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
     # Role
-    role: Mapped[str] = mapped_column(String(10), default=Role.USER.value, nullable=False)
+    # Native "Role" enum shared with Prisma (created by migration f7c1d2e3a4b5)
+    role: Mapped[str] = mapped_column(
+        ENUM(*(r.value for r in Role), name="Role", create_type=False),
+        default=Role.USER.value,
+        server_default=Role.USER.value,
+        nullable=False,
+    )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(

@@ -770,7 +770,10 @@ class MultiSourceScanner:
         # ============================================
         matched_clusters: list[MatchedEvent] = []
         if other_events and self._matcher_initialized:
-            matched_clusters = self.cross_source_matcher.match_events(other_events)
+            # Embedding is blocking (API call or CPU) — keep it off the event loop
+            matched_clusters = await asyncio.to_thread(
+                self.cross_source_matcher.match_events, other_events
+            )
             logger.info(f"Cross-source matching: {len(matched_clusters)} clusters found")
 
         # ============================================

@@ -19,8 +19,6 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 import numpy as np
-from sklearn.cluster import DBSCAN
-from sklearn.metrics.pairwise import cosine_distances
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -119,6 +117,10 @@ class EventClusterer:
         embeddings = np.array([e.embedding for e in events])
 
         logger.info(f"Clustering {len(events)} events with DBSCAN (eps={self.eps})")
+
+        # Lazy import: scikit-learn ships with the optional `ml` dependency group
+        from sklearn.cluster import DBSCAN
+        from sklearn.metrics.pairwise import cosine_distances
 
         # Compute cosine distance matrix
         distance_matrix = cosine_distances(embeddings)

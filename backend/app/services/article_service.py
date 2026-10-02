@@ -11,6 +11,7 @@ Handles:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -206,7 +207,8 @@ class ArticleService:
             logger.debug(f"[REEMBED] Generating canonical embedding for: {canonical_title[:50]}...")
 
             # Generate new embedding from canonical title
-            new_embedding = embedding_generator(canonical_title)
+            # Blocking (API call or CPU) — keep it off the event loop
+            new_embedding = await asyncio.to_thread(embedding_generator, canonical_title)
 
             if new_embedding:
                 # Re-check for duplicates with canonical embedding

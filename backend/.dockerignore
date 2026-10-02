@@ -48,3 +48,9 @@ docs/
 # Misc
 .DS_Store
 Thumbs.db
+
+# Not needed in the image
+tests/
+logs/
+outputs/
+.claude/

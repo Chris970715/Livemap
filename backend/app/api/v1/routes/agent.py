@@ -8,17 +8,36 @@ POST /api/v1/agent/scan - Trigger multi-source scan
 
 import asyncio
 import logging
+import secrets
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app.agent import ClaimVerificationAgent, NewsScanner
 from app.agent.geo_mapper import get_location, get_subcategory
+from app.core.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+
+async def require_admin_token(x_admin_token: Optional[str] = Header(None)) -> None:
+    """Guard LLM-quota-consuming triggers on public deployments.
+
+    With ADMIN_API_TOKEN set, the X-Admin-Token header must match.
+    Without it, triggers stay open in DEBUG (local dev) and are disabled otherwise.
+    """
+    expected = settings.ADMIN_API_TOKEN
+    if expected:
+        # Compare bytes: compare_digest raises TypeError on non-ASCII str
+        if not x_admin_token or not secrets.compare_digest(
+            x_admin_token.encode(), expected.encode()
+        ):
+            raise HTTPException(status_code=401, detail="Invalid or missing X-Admin-Token")
+    elif not settings.DEBUG:
+        raise HTTPException(status_code=403, detail="Manual agent triggers are disabled")
 
 # Store for investigation results (in production, use Redis or DB)
 _investigations: dict[str, dict] = {}
@@ -60,7 +79,11 @@ class ScanResponse(BaseModel):
     events: list[dict]
 
 
-@router.post("/investigate", response_model=InvestigateResponse)
+@router.post(
+    "/investigate",
+    response_model=InvestigateResponse,
+    dependencies=[Depends(require_admin_token)],
+)
 async def start_investigation(request: InvestigateRequest):
     """
     Start an autonomous investigation on a topic.
@@ -171,7 +194,7 @@ async def get_investigation_status(investigation_id: str):
     return _investigations[investigation_id]
 
 
-@router.post("/scan", response_model=ScanResponse)
+@router.post("/scan", response_model=ScanResponse, dependencies=[Depends(require_admin_token)])
 async def trigger_scan(request: ScanRequest):
     """
     Trigger a multi-source scan for events.

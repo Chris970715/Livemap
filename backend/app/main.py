@@ -30,7 +30,7 @@ app = FastAPI(
 # CORS middleware for Next.js frontend
 # Credentials must be True to allow cookies (JWT session tokens)
 # Debug mode includes localhost origins for development
-_cors_origins = [settings.FRONTEND_URL]
+_cors_origins = settings.cors_origins
 if settings.DEBUG:
     _cors_origins.extend([
         "http://localhost:3000",

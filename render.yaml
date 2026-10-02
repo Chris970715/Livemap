@@ -1,0 +1,46 @@
+# Render Blueprint — Huginn backend (FastAPI + AI news pipeline)
+# https://render.com/docs/blueprint-spec
+#
+# Dashboard → New → Blueprint → this repo. Deploys the `dev` branch.
+# `sync: false` values are prompted once when the Blueprint is created.
+services:
+  - type: web
+    name: huginn-api
+    runtime: docker
+    plan: free
+    region: virginia  # same area as Vercel (iad1) and Neon (aws-us-east-1)
+    branch: dev
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    buildFilter:
+      paths:
+        - backend/**
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      # Neon direct (non-pooled) connection string; postgresql://...?sslmode=require is fine
+      - key: DATABASE_URL
+        sync: false
+      # Must equal AUTH_SECRET on Vercel (NextAuth JWT shared with the backend)
+      - key: AUTH_SECRET
+        sync: false
+      # Vercel production URL, e.g. https://huginn.vercel.app (comma-separate several)
+      - key: FRONTEND_URL
+        sync: false
+      # Header token for POST /api/v1/agent/investigate and /scan
+      - key: ADMIN_API_TOKEN
+        generateValue: true
+      - key: DEBUG
+        value: "false"
+      # LLM providers (free tiers)
+      - key: AGENT_GROQ_API_KEY
+        sync: false
+      - key: AGENT_GEMINI_API_KEY
+        sync: false
+      - key: AGENT_TAVILY_API_KEY
+        sync: false
+      # 512MB instance: embeddings via Gemini API instead of local bge-m3
+      - key: AGENT_EMBEDDING_PROVIDER
+        value: gemini
+      - key: AGENT_SCAN_INTERVAL_MINUTES
+        value: "60"

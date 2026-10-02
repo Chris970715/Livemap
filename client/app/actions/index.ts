@@ -2,8 +2,7 @@
  * Server Actions
  *
  * @example
- * import { signInWithCredentials, register } from "@/app/actions";
- * import { getItems, createItem } from "@/app/actions/items";
+ * import { signInWithCredentials, signInAsDemo } from "@/app/actions";
  */
 
-export { signInWithCredentials, signInWithOAuth, register } from "./auth";
+export { signInWithCredentials, signInAsDemo } from "./auth";

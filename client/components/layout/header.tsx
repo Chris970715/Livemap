@@ -9,7 +9,6 @@ import { languageAtom } from "@/lib/store";
 import { AuthButton } from "./auth-button";
 
 const NAV_ITEMS = [
-  { name: "홈", path: "/" },
   { name: "정치", path: "/politics" },
   { name: "경제", path: "/economy" },
   { name: "안보", path: "/security" },
@@ -51,6 +50,9 @@ export function Header() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center space-x-6">
+            <Link href="/" className="text-sm font-bold tracking-widest text-white mr-4">
+              HUGINN
+            </Link>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.path;
               return (

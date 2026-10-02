@@ -344,12 +344,20 @@ async def get_feeds(
         )
         if subCategory:
             query_no_loc = query_no_loc.where(Event.sub_category == subCategory)
+        if q and q.strip():
+            query_no_loc = query_no_loc.where(
+                sa_text("articles.search_vector @@ websearch_to_tsquery('english', :q)")
+            ).params(q=q.strip())
 
         result = await db.execute(query_no_loc)
         rows = result.all()
 
         if rows:
             return [_article_to_feed_response(article, event) for article, event in rows]
+
+        # A search without hits is an empty result, not a cue to show sample articles
+        if q and q.strip():
+            return []
 
         # If DB is empty, return mock data
         filtered = [f for f in _get_mock_feeds() if f["category"] == category]

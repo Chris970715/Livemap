@@ -98,20 +98,41 @@ class CrossSourceMatcher:
     async def initialize(self) -> bool:
         """Initialize the embedding model"""
         try:
-            from sentence_transformers import SentenceTransformer
             from fastapi.concurrency import run_in_threadpool
 
+            from .embeddings import load_embedder
+
             # Load model in thread pool to not block
-            self._encoder = await run_in_threadpool(
-                SentenceTransformer,
-                self.embedding_model
-            )
-            logger.info(f"Cross-source matcher initialized with {self.embedding_model}")
+            self._encoder = await run_in_threadpool(load_embedder, self.embedding_model)
+            if self._encoder is None:
+                logger.info("No embedding provider available, using fallback text similarity")
+            else:
+                logger.info("Cross-source matcher initialized with embeddings")
             return True
         except Exception as e:
             logger.warning(f"Could not load embedding model: {e}")
             logger.info("Using fallback text similarity")
             return True
+
+    def generate_embeddings_for_texts(self, texts: list[str]) -> dict[str, list[float]]:
+        """Embed many texts in one batch (one API request instead of one per text).
+
+        Returns {text: embedding}; empty when no encoder is available or on error.
+        """
+        unique = list(dict.fromkeys(texts))
+        if not self._encoder or not unique:
+            return {}
+
+        try:
+            embeddings = self._encoder.encode(
+                unique,
+                normalize_embeddings=True,
+                show_progress_bar=False,
+            )
+            return {text: emb.tolist() for text, emb in zip(unique, embeddings)}
+        except Exception as e:
+            logger.error(f"Error generating batch embeddings: {e}")
+            return {}
 
     def generate_embedding_for_text(self, text: str) -> list[float] | None:
         """

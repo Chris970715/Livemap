@@ -12,6 +12,7 @@ Semantic Clustering 레이어
 - 연구 결과: LLM 임베딩이 키워드 기반보다 클러스터링 품질 우수
 """
 
+import asyncio
 import hashlib
 import logging
 from dataclasses import dataclass, field
@@ -91,17 +92,16 @@ class SemanticClusterer:
     async def initialize(self) -> bool:
         """임베딩 모델 초기화"""
         try:
-            from sentence_transformers import SentenceTransformer
+            from ..embeddings import load_embedder
 
-            # BGE-M3: 다국어, 고성능, 1024차원
-            logger.info("Loading embedding model (BAAI/bge-m3)...")
-            self.embedder = SentenceTransformer("BAAI/bge-m3")
+            # BGE-M3 (로컬) 또는 Gemini API: 다국어, 1024차원
+            self.embedder = await asyncio.to_thread(load_embedder, "BAAI/bge-m3")
+            if self.embedder is None:
+                logger.warning("No embedding provider available, semantic clustering disabled")
+                return False
             logger.info("Embedding model loaded successfully")
             return True
 
-        except ImportError:
-            logger.error("sentence-transformers not installed. Run: pip install sentence-transformers")
-            return False
         except Exception as e:
             logger.error(f"Failed to load embedding model: {e}")
             return False
@@ -153,7 +153,8 @@ class SemanticClusterer:
         texts = [t if t else "empty" for t in texts]  # 빈 문자열 처리
 
         try:
-            embeddings = self._embed(texts)
+            # Blocking (API call or CPU) — keep it off the event loop
+            embeddings = await asyncio.to_thread(self._embed, texts)
         except Exception as e:
             logger.error(f"Embedding failed: {e}")
             return []
