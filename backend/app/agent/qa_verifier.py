@@ -34,7 +34,7 @@ from tenacity import (
 )
 
 from .claim_extraction import ExtractedClaim
-from .config import agent_settings
+from .config import agent_settings, groq_reasoning_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -254,9 +254,11 @@ class QAVerifier:
         self,
         model: str | None = None,
         temperature: float = 0.1,
-        max_evidence_chars: int = 60000,  # ~60K chars per AIC CTU
+        # Evidence is re-sent for every claim: ~8K chars (~2K tokens) per call and one
+        # claim at a time keep an investigation under Groq's free 8K tokens/minute
+        max_evidence_chars: int = 8000,
         llm_timeout: float = 60.0,
-        max_concurrent_verifications: int = 3,
+        max_concurrent_verifications: int = 1,
     ):
         self.model = model or agent_settings.groq_model
         self.temperature = temperature
@@ -272,6 +274,7 @@ class QAVerifier:
             temperature=self.temperature,
             api_key=agent_settings.groq_api_key,
             base_url=agent_settings.groq_base_url,
+            **groq_reasoning_kwargs(self.model),
         )
 
     async def verify_claim(

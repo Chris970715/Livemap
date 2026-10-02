@@ -109,3 +109,53 @@ class TestLoadEmbedder:
             patch.dict(embeddings._embedders, clear=True),
         ):
             assert load_embedder() is None
+
+
+class TestGeminiSimilarityThresholds:
+    """Gemini embeddings need higher thresholds than bge-m3 (see agent/config.py)."""
+
+    def test_should_use_gemini_thresholds_when_provider_is_gemini(self):
+        from app.agent.config import GEMINI_SIMILARITY_THRESHOLDS, AgentSettings
+
+        settings = AgentSettings(_env_file=None, embedding_provider="gemini", gemini_api_key="k")
+
+        for field, value in GEMINI_SIMILARITY_THRESHOLDS.items():
+            assert getattr(settings, field) == value
+
+    def test_should_keep_bge_thresholds_when_provider_is_local(self):
+        from app.agent.config import AgentSettings
+
+        settings = AgentSettings(_env_file=None, embedding_provider="local")
+
+        assert settings.dedup_duplicate_threshold == 0.75
+        assert settings.cross_source_similarity_threshold == 0.70
+
+    def test_should_respect_explicit_threshold_with_gemini(self):
+        from app.agent.config import AgentSettings
+
+        settings = AgentSettings(
+            _env_file=None,
+            embedding_provider="gemini",
+            gemini_api_key="k",
+            dedup_duplicate_threshold=0.9,
+        )
+
+        assert settings.dedup_duplicate_threshold == 0.9
+        assert settings.dedup_potential_threshold == 0.83
+
+    def test_should_resolve_auto_to_gemini_without_local_model(self):
+        from app.agent.config import AgentSettings
+
+        with patch("importlib.util.find_spec", return_value=None):
+            settings = AgentSettings(_env_file=None, embedding_provider="auto", gemini_api_key="k")
+
+        assert settings.resolved_embedding_provider() == "gemini"
+        assert settings.dedup_duplicate_threshold == 0.88
+
+    def test_should_resolve_gemini_without_key_to_none_and_keep_bge_thresholds(self):
+        from app.agent.config import AgentSettings
+
+        settings = AgentSettings(_env_file=None, embedding_provider="gemini", gemini_api_key="")
+
+        assert settings.resolved_embedding_provider() == "none"
+        assert settings.cross_source_similarity_threshold == 0.70

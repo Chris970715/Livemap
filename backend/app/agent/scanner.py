@@ -26,7 +26,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
 from .checkworthiness import check_worthiness, RejectionReason
-from .config import agent_settings
+from .config import agent_settings, groq_reasoning_kwargs
 from .event_verifier import verify_event_hybrid
 from .specificity import check_specificity
 from .triggers import TriggerEvent, TriggerManager, TriggerSource
@@ -377,6 +377,7 @@ class MultiSourceScanner:
                 temperature=0.1,
                 api_key=agent_settings.groq_api_key,
                 base_url=agent_settings.groq_base_url,
+                **groq_reasoning_kwargs(agent_settings.groq_model),
             )
         elif agent_settings.openai_api_key:
             self.llm = ChatOpenAI(

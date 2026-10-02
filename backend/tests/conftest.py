@@ -8,6 +8,13 @@ Fixtures:
 - sample_claims: Sample claim data for verification tests
 """
 
+import os
+
+# Tests assume the bge-m3 similarity thresholds; keep them independent of a
+# developer's backend/.env (AGENT_EMBEDDING_PROVIDER=gemini switches thresholds).
+# Must run before app modules create `agent_settings`.
+os.environ["AGENT_EMBEDDING_PROVIDER"] = "local"
+
 from datetime import datetime, timedelta
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch

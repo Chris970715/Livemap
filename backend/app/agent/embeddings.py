@@ -10,7 +10,8 @@ The pipeline only needs an object with a SentenceTransformer-style
           fit the existing Vector(1024) columns (free tier, fits 512MB hosts)
 
 AGENT_EMBEDDING_PROVIDER=auto picks local when sentence-transformers is
-installed, otherwise Gemini when AGENT_GEMINI_API_KEY is set.
+installed, otherwise Gemini when AGENT_GEMINI_API_KEY is set (see
+AgentSettings.resolved_embedding_provider, which also picks the thresholds).
 
 `.encode()` is blocking (network or CPU); call it via asyncio.to_thread from
 async code.
@@ -117,7 +118,7 @@ _embedders_lock = threading.Lock()
 
 def load_embedder(local_model: str = "BAAI/bge-m3"):
     """Return the shared encoder for the configured provider, or None (text-similarity fallback)."""
-    provider = agent_settings.embedding_provider
+    provider = agent_settings.resolved_embedding_provider()
     key = (provider, local_model)
     with _embedders_lock:
         if key not in _embedders:
@@ -126,26 +127,24 @@ def load_embedder(local_model: str = "BAAI/bge-m3"):
 
 
 def _create_embedder(provider: str, local_model: str):
-    if provider in ("auto", "local"):
+    if provider == "local":
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError:
-            if provider == "local":
-                logger.error("sentence-transformers not installed. Run: uv sync --group ml")
-                return None
-        else:
-            logger.info(f"Loading local embedding model ({local_model})...")
-            return SentenceTransformer(local_model)
+            logger.error("sentence-transformers not installed. Run: uv sync --group ml")
+            return None
+        logger.info(f"Loading local embedding model ({local_model})...")
+        return SentenceTransformer(local_model)
 
-    if provider in ("auto", "gemini"):
-        if agent_settings.gemini_api_key:
-            logger.info(
-                f"Using Gemini embeddings ({agent_settings.gemini_embedding_model}, {EMBEDDING_DIM} dims)"
-            )
-            return GeminiEmbedder(
-                api_key=agent_settings.gemini_api_key,
-                model=agent_settings.gemini_embedding_model,
-            )
-        logger.warning("Gemini embeddings selected but AGENT_GEMINI_API_KEY is not set")
+    if provider == "gemini":
+        logger.info(
+            f"Using Gemini embeddings ({agent_settings.gemini_embedding_model}, {EMBEDDING_DIM} dims)"
+        )
+        return GeminiEmbedder(
+            api_key=agent_settings.gemini_api_key,
+            model=agent_settings.gemini_embedding_model,
+        )
 
+    if agent_settings.embedding_provider in ("auto", "gemini"):
+        logger.warning("No embedding provider available (AGENT_GEMINI_API_KEY is not set)")
     return None

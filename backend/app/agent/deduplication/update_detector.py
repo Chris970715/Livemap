@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
-from app.agent.config import agent_settings
+from app.agent.config import agent_settings, groq_reasoning_kwargs
 
 if TYPE_CHECKING:
     from app.models.event import Event
@@ -120,6 +120,7 @@ class UpdateDetector:
             temperature=temperature,
             api_key=agent_settings.groq_api_key,
             base_url=agent_settings.groq_base_url,
+            **groq_reasoning_kwargs(self.model),
         )
 
     async def check_for_update(

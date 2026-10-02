@@ -41,3 +41,16 @@ class TestCorsOrigins:
     def test_should_split_comma_separated_origins_and_strip_trailing_slash(self):
         settings = _settings(FRONTEND_URL="https://huginn.vercel.app/, http://localhost:3010")
         assert settings.cors_origins == ["https://huginn.vercel.app", "http://localhost:3010"]
+
+
+class TestGroqReasoningKwargs:
+    def test_should_lower_reasoning_effort_for_gpt_oss_models(self):
+        from app.agent.config import groq_reasoning_kwargs
+
+        assert groq_reasoning_kwargs("openai/gpt-oss-20b") == {"reasoning_effort": "low"}
+
+    def test_should_send_nothing_extra_for_non_reasoning_models(self):
+        from app.agent.config import groq_reasoning_kwargs
+
+        assert groq_reasoning_kwargs("qwen/qwen3.8-27b") == {}
+        assert groq_reasoning_kwargs("gpt-4o-mini") == {}

@@ -26,7 +26,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
-from .config import agent_settings
+from .config import agent_settings, groq_reasoning_kwargs
 from .graph import (
     CollectedItem,
     InvestigationReport,
@@ -56,6 +56,7 @@ class InvestigationAgent:
             temperature=agent_settings.llm_temperature,
             api_key=agent_settings.groq_api_key,
             base_url=agent_settings.groq_base_url,
+            **groq_reasoning_kwargs(agent_settings.groq_model),
         ).bind_tools(INVESTIGATOR_TOOLS)
 
         # LLM (도구 없음) - 검증/발행용
@@ -64,6 +65,7 @@ class InvestigationAgent:
             temperature=agent_settings.llm_temperature,
             api_key=agent_settings.groq_api_key,
             base_url=agent_settings.groq_base_url,
+            **groq_reasoning_kwargs(agent_settings.groq_model),
         )
 
         # 그래프 구성

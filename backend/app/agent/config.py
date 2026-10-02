@@ -10,10 +10,32 @@ LLM:
 - GPT-4o-mini 기반 (입력 $0.15/1M, 출력 $0.60/1M)
 """
 
+import importlib.util
 from typing import Literal
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 from pydantic_settings import BaseSettings
+
+# Embedding similarity thresholds below are tuned for local bge-m3. Gemini
+# embeddings (gemini-embedding-001, 1024 dims, SEMANTIC_SIMILARITY) have a much
+# higher baseline — measured 2026-10-01 on news headlines: same event 0.90-0.97,
+# related-but-different events 0.75-0.82, unrelated 0.63-0.73 — so with bge-m3
+# values, related stories would be dropped as duplicates. Applied automatically
+# when embeddings come from Gemini, unless the env var sets the field explicitly.
+GEMINI_SIMILARITY_THRESHOLDS = {
+    "dedup_duplicate_threshold": 0.88,
+    "dedup_potential_threshold": 0.83,
+    "dedup_related_threshold": 0.76,
+    "cross_source_similarity_threshold": 0.85,
+    "cluster_member_threshold": 0.85,
+    "cluster_new_threshold": 0.74,
+}
+
+
+def groq_reasoning_kwargs(model: str) -> dict:
+    """gpt-oss models reason before answering; "low" effort trims completion tokens,
+    which matters under Groq's free tier (8K tokens/min, 200K tokens/day per model)."""
+    return {"reasoning_effort": "low"} if model.startswith("openai/gpt-oss") else {}
 
 
 class AgentSettings(BaseSettings):
@@ -99,6 +121,10 @@ class AgentSettings(BaseSettings):
     # ===========================================
     min_confidence_score: float = 0.70  # 발행 최소 신뢰도
     cross_source_similarity_threshold: float = 0.70  # 소스간 매칭 임계값
+
+    # Semantic clusterer (trigger manager): 기존 클러스터 합류 / 새 클러스터 생성 임계값
+    cluster_member_threshold: float = 0.70
+    cluster_new_threshold: float = 0.40
 
     # ===========================================
     # 스캐너 설정
@@ -195,17 +221,19 @@ class AgentSettings(BaseSettings):
     investigation_timeout_seconds: float = 300.0  # 5 minutes
 
     # ===========================================
-    # Groq (무료 14,400 RPD — 분류/검증용)
+    # Groq (무료: 모델별 1K RPD / 8K TPM / 200K TPD — 분류/검증용)
     # ===========================================
     groq_api_key: str = ""
     groq_base_url: str = "https://api.groq.com/openai/v1"
-    groq_model: str = "llama-3.1-8b-instant"
+    # llama-3.1-8b-instant was retired; free-tier limits are per model (1,000 RPD each),
+    # so verification and classification use different models
+    groq_model: str = "openai/gpt-oss-20b"
 
     # ===========================================
     # Gemini (무료 1,000 RPD — 기사 생성용)
     # ===========================================
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash-lite"
+    gemini_model: str = "gemini-3.5-flash-lite"  # 2.5-flash-lite is closed to new API keys
 
     # ===========================================
     # Embeddings (semantic dedup / clustering) — see app/agent/embeddings.py
@@ -220,7 +248,7 @@ class AgentSettings(BaseSettings):
     # Enable/disable LLM-based news classification
     llm_classifier_enabled: bool = True
 
-    llm_classifier_model: str = "llama-3.1-8b-instant"
+    llm_classifier_model: str = "qwen/qwen3.8-27b"  # fewest tokens per batch (8K TPM free tier)
 
     # Classification settings
     llm_classifier_batch_size: int = 20  # Process articles in batches
@@ -296,6 +324,28 @@ class AgentSettings(BaseSettings):
         env_file=".env",
         extra="ignore",
     )
+
+    def resolved_embedding_provider(self) -> str:
+        """Provider actually used ("local" | "gemini" | "none") — the single source for
+        both the encoder (agent/embeddings.py) and the similarity thresholds.
+
+        "auto" means local bge-m3 if installed, else Gemini; Gemini needs a key.
+        """
+        provider = self.embedding_provider
+        if provider == "auto":
+            has_local = importlib.util.find_spec("sentence_transformers") is not None
+            provider = "local" if has_local else "gemini"
+        if provider == "gemini" and not self.gemini_api_key:
+            return "none"
+        return provider
+
+    @model_validator(mode="after")
+    def _use_gemini_similarity_thresholds(self) -> "AgentSettings":
+        if self.resolved_embedding_provider() == "gemini":
+            for field, value in GEMINI_SIMILARITY_THRESHOLDS.items():
+                if field not in self.model_fields_set:
+                    setattr(self, field, value)
+        return self
 
     def get_telegram_channels(self) -> list[str]:
         """텔레그램 채널 목록 파싱"""

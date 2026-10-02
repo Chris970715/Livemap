@@ -245,10 +245,13 @@ class BilingualArticleGenerator:
         # Use Gemini for article generation (free 1,000 RPD)
         if agent_settings.gemini_api_key:
             self.model = model or agent_settings.gemini_model
+            # Gemini 3 loops/degrades with temperature < 1.0; omit it so the library
+            # applies its recommended default for these models
+            temperature_kwargs = {} if "gemini-3" in self.model else {"temperature": temperature}
             self.llm = ChatGoogleGenerativeAI(
                 model=self.model,
-                temperature=temperature,
                 google_api_key=agent_settings.gemini_api_key,
+                **temperature_kwargs,
             )
         else:
             # Fallback to OpenAI
@@ -307,7 +310,8 @@ class BilingualArticleGenerator:
                 timeout=self.llm_timeout,
             )
 
-            article = self._parse_bilingual_response(response.content)
+            # .text: Gemini 3 models return a list of content blocks, not a str
+            article = self._parse_bilingual_response(str(response.text))
 
         except asyncio.TimeoutError:
             logger.error(f"Bilingual generation timed out after {self.llm_timeout}s")

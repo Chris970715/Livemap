@@ -24,6 +24,7 @@ from typing import Callable, Optional
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from ..config import agent_settings
 from .base import BaseTrigger, TriggerEvent, TriggerSource
 from .gdelt import GDELTTrigger
 from .telegram import TelegramTrigger
@@ -111,8 +112,8 @@ class TriggerManager:
         ) if enable_anomaly_detection else None
 
         self.semantic_clusterer = SemanticClusterer(
-            similarity_threshold=0.7,
-            new_cluster_threshold=0.4,
+            similarity_threshold=agent_settings.cluster_member_threshold,
+            new_cluster_threshold=agent_settings.cluster_new_threshold,
             min_cluster_size=2,
         ) if enable_clustering else None
 
