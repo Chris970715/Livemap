@@ -35,8 +35,17 @@ from tenacity import (
 
 from .claim_extraction import ExtractedClaim
 from .config import agent_settings, groq_reasoning_kwargs
+from .llm_text import (
+    is_separator,
+    list_item_text,
+    normalize_verdict,
+    parse_labeled_line,
+    strip_markdown_edges,
+)
 
 logger = logging.getLogger(__name__)
+
+_VERDICT_LABELS = {"VERDICT", "CONFIDENCE", "EVIDENCE_QUOTES", "REASONING"}
 
 
 # =============================================================================
@@ -587,63 +596,82 @@ class QAVerifier:
                 "reasoning": f"Verification failed: {e}",
             }
 
-    def _parse_verdict(self, content: str) -> dict:
-        """Parse LLM verdict response."""
+    @staticmethod
+    def _parse_confidence(text: str) -> int | None:
+        """Parse "4", "4/5", "80%" or "4 out of 5" into the 1-5 scale."""
+        try:
+            if "%" in text:
+                conf = round(int(text.replace("%", "").split()[0]) / 20)
+            elif "/" in text:
+                conf = int(text.split("/")[0].strip())
+            else:
+                conf = int(text.split()[0])
+        except (ValueError, IndexError):
+            logger.debug(f"Could not parse confidence from: {text}")
+            return None
+        return max(1, min(5, conf))
+
+    @staticmethod
+    def _parse_verdict(content: str) -> dict:
+        """Parse LLM verdict response (tolerates markdown, bullets, values on the next line)."""
         result = {
             "verdict": "NOT_ENOUGH_INFO",
             "confidence": 3,
             "evidence_quotes": [],
             "reasoning": "",
         }
+        section = None  # "quotes" | "reasoning": unlabeled lines belong to this section
+        pending = None  # label whose value is on the next line
+        found_verdict = False
+        quotes: list[str] = []
+        reasoning: list[str] = []
 
-        lines = content.split("\n")
-        in_quotes = False
-        quotes = []
+        def apply(label: str, value: str) -> None:
+            nonlocal found_verdict
+            if label == "VERDICT":
+                verdict = normalize_verdict(value)
+                if verdict:
+                    result["verdict"] = verdict
+                    found_verdict = True
+            elif label == "CONFIDENCE":
+                confidence = QAVerifier._parse_confidence(strip_markdown_edges(value))
+                if confidence:
+                    result["confidence"] = confidence
 
-        for line in lines:
+        for line in content.split("\n"):
             line = line.strip()
+            if not line or is_separator(line):
+                continue
 
-            if line.startswith("VERDICT:"):
-                verdict_text = line[8:].strip().upper()
-                if verdict_text in ("SUPPORTED", "REFUTED", "NOT_ENOUGH_INFO"):
-                    result["verdict"] = verdict_text
-
-            elif line.startswith("CONFIDENCE:"):
-                try:
-                    conf_text = line[11:].strip()
-                    # Handle various formats: "4", "4/5", "80%", "4 out of 5"
-                    if "%" in conf_text:
-                        # Convert percentage to 1-5 scale
-                        pct = int(conf_text.replace("%", "").split()[0])
-                        conf = max(1, min(5, round(pct / 20)))
-                    elif "/" in conf_text:
-                        # Handle "4/5" format
-                        numerator = int(conf_text.split("/")[0].strip())
-                        conf = max(1, min(5, numerator))
+            labeled = parse_labeled_line(line, _VERDICT_LABELS)
+            if labeled:
+                label, value = labeled
+                pending = None
+                section = {"EVIDENCE_QUOTES": "quotes", "REASONING": "reasoning"}.get(label)
+                if label == "REASONING" and value:
+                    reasoning.append(value)
+                elif label in ("VERDICT", "CONFIDENCE"):
+                    if value:
+                        apply(label, value)
                     else:
-                        # Handle "4" or "4 out of 5" format
-                        conf = int(conf_text.split()[0])
-                    result["confidence"] = max(1, min(5, conf))
-                except (ValueError, IndexError):
-                    # Keep default confidence (3)
-                    logger.debug(f"Could not parse confidence from: {line}")
+                        pending = label
+                continue
 
-            elif line.startswith("EVIDENCE_QUOTES:"):
-                in_quotes = True
-
-            elif line.startswith("REASONING:"):
-                in_quotes = False
-                result["reasoning"] = line[10:].strip()
-
-            elif in_quotes and line.startswith("-"):
-                quote = line.lstrip("- ").strip().strip('"\'')
+            if pending:
+                apply(pending, line)
+                pending = None
+            elif section == "quotes":
+                quote = list_item_text(line)
                 if quote:
-                    quotes.append(quote)
+                    quote = quote.strip("\"“”'")
+                    if quote:
+                        quotes.append(quote)
+            elif section == "reasoning":
+                reasoning.append(line)
 
-            elif not in_quotes and result["reasoning"] and line:
-                # Continue reasoning on next line
-                result["reasoning"] += " " + line
-
+        if not found_verdict:
+            logger.warning("No VERDICT label in LLM output; defaulting to NOT_ENOUGH_INFO")
+        result["reasoning"] = " ".join(reasoning)
         result["evidence_quotes"] = quotes[:5]  # Max 5 quotes
         return result
 

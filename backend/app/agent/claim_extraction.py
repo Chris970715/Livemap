@@ -27,8 +27,11 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
 from .config import agent_settings, groq_reasoning_kwargs
+from .llm_text import parse_labeled_line, strip_markdown_edges
 
 logger = logging.getLogger(__name__)
+
+_CLAIM_LABELS = {"CLAIM", "ORIGINAL", "TYPE", "VERIFIABLE"}
 
 
 # =============================================================================
@@ -213,39 +216,46 @@ class ClaimExtractor:
             return ClaimExtractionResult(original_text=text)
 
     def _parse_claims(self, content: str) -> list[ExtractedClaim]:
-        """Parse LLM response into structured claims."""
+        """Parse LLM response into structured claims (tolerates markdown and bullets)."""
         claims: list[ExtractedClaim] = []
         current_claim: dict = {}
-        claim_counter = 0
+        pending = None  # label whose value is on the next line
+
+        def save_current() -> None:
+            if current_claim.get("text"):
+                claims.append(self._create_claim(current_claim, len(claims) + 1))
+
+        def apply(label: str, value: str) -> None:
+            nonlocal current_claim
+            if label == "CLAIM":
+                save_current()
+                current_claim = {"text": value}
+            elif label == "ORIGINAL":
+                current_claim["original_span"] = value
+            elif label == "TYPE":
+                claim_type = value.lower()
+                if claim_type in ("factual", "opinion", "prediction"):
+                    current_claim["claim_type"] = claim_type
+            elif label == "VERIFIABLE":
+                current_claim["is_verifiable"] = value.lower() == "yes"
 
         for line in content.split("\n"):
             line = line.strip()
+            if not line:
+                continue
+            labeled = parse_labeled_line(line, _CLAIM_LABELS)
+            if labeled:
+                label, value = labeled
+                pending = None
+                if value:
+                    apply(label, strip_markdown_edges(value))
+                else:
+                    pending = label
+            elif pending:
+                apply(pending, strip_markdown_edges(line))
+                pending = None
 
-            if line.startswith("CLAIM:"):
-                # Save previous claim if exists
-                if current_claim.get("text"):
-                    claim_counter += 1
-                    claims.append(self._create_claim(current_claim, claim_counter))
-                # Start new claim
-                current_claim = {"text": line[6:].strip()}
-
-            elif line.startswith("ORIGINAL:"):
-                current_claim["original_span"] = line[9:].strip()
-
-            elif line.startswith("TYPE:"):
-                type_text = line[5:].strip().lower()
-                if type_text in ("factual", "opinion", "prediction"):
-                    current_claim["claim_type"] = type_text
-
-            elif line.startswith("VERIFIABLE:"):
-                verifiable_text = line[11:].strip().lower()
-                current_claim["is_verifiable"] = verifiable_text == "yes"
-
-        # Save last claim
-        if current_claim.get("text"):
-            claim_counter += 1
-            claims.append(self._create_claim(current_claim, claim_counter))
-
+        save_current()
         return claims
 
     def _create_claim(self, data: dict, index: int) -> ExtractedClaim:

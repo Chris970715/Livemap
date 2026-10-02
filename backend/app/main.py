@@ -66,7 +66,9 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 app.include_router(api_router, prefix="/api/v1")
 
 
+# HEAD too: free uptime monitors (UptimeRobot) probe with HEAD requests
 @app.get("/health")
+@app.head("/health", include_in_schema=False)
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": settings.APP_NAME}
