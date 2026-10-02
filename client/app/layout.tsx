@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Header } from "@/components/layout";
+import { SITE_NAME } from "@/lib/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Huginn — Real-time Security Intelligence",
+  title: {
+    default: `${SITE_NAME} — Real-time Security Intelligence`,
+    template: `%s | ${SITE_NAME}`,
+  },
   description: "AI-verified war and security news, mapped in real time",
 };
 

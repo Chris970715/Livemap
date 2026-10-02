@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Politics | Huginn",
+  title: "Politics",
   description: "Political news and analysis",
 };
 

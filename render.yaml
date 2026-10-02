@@ -1,10 +1,11 @@
-# Render Blueprint — Huginn backend (FastAPI + AI news pipeline)
+# Render Blueprint — LiveMap backend (FastAPI + AI news pipeline)
 # https://render.com/docs/blueprint-spec
 #
 # Dashboard → New → Blueprint → this repo. Deploys the `dev` branch.
 # `sync: false` values are prompted once when the Blueprint is created.
 services:
   - type: web
+    # Service name is the Blueprint's key and sets the onrender.com URL; renaming creates a new service
     name: huginn-api
     runtime: docker
     plan: free
@@ -24,7 +25,7 @@ services:
       # Must equal AUTH_SECRET on Vercel (NextAuth JWT shared with the backend)
       - key: AUTH_SECRET
         sync: false
-      # Vercel production URL, e.g. https://huginn.vercel.app (comma-separate several)
+      # Vercel production URL(s), comma-separated, e.g. https://livemap.vercel.app
       - key: FRONTEND_URL
         sync: false
       # Header token for POST /api/v1/agent/investigate and /scan

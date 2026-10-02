@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Application
-    APP_NAME: str = "Livemap API"
+    APP_NAME: str = "LiveMap API"
     DEBUG: bool = True
 
     # Database (Backend - feeds, channels, etc.)

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Tech | Huginn",
+  title: "Tech",
   description: "Technology trends and IT news",
 };
 

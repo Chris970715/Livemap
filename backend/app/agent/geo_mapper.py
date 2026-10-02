@@ -265,7 +265,7 @@ async def geocode_nominatim(place_name: str) -> tuple[float, float, str] | None:
             resp = await client.get(
                 "https://nominatim.openstreetmap.org/search",
                 params={"q": place_name, "format": "json", "limit": 1},
-                headers={"User-Agent": "Huginn/1.0 (war-security-news)"},
+                headers={"User-Agent": "LiveMap/1.0 (war-security-news)"},
             )
             _nominatim_last_call = time.time()
             data = resp.json()

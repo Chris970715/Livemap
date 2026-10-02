@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAtom } from "jotai";
 
+import { SITE_NAME } from "@/lib/constants";
 import { languageAtom } from "@/lib/store";
 import { AuthButton } from "./auth-button";
 
@@ -51,7 +52,7 @@ export function Header() {
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link href="/" className="text-sm font-bold tracking-widest text-white mr-4">
-              HUGINN
+              {SITE_NAME}
             </Link>
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.path;

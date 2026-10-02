@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { SecurityInteractive } from "./_components/security-interactive";
 
 export const metadata: Metadata = {
-  title: "Live Security News | Huginn",
+  title: "Live Security News",
   description: "Follow AI-verified war and security news on a live map",
 };
 

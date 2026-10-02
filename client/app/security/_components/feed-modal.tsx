@@ -4,6 +4,7 @@ import { useEffect, useCallback } from "react";
 import { useAtom, useAtomValue } from "jotai";
 
 import { selectedFeedAtom, isModalOpenAtom, languageAtom, feedsListAtom } from "@/lib/store";
+import { SITE_NAME } from "@/lib/constants";
 import type { ArticleStructure } from "@/lib/types/feed";
 
 function formatDate(date: Date | string): string {
@@ -296,7 +297,7 @@ export function FeedModal() {
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-gray-800 flex items-center justify-between text-xs text-gray-500">
-            <span>AI Generated · Huginn</span>
+            <span>AI Generated · {SITE_NAME}</span>
             <span>ID: {feed.id}</span>
           </div>
         </div>

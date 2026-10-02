@@ -6,6 +6,7 @@
  */
 
 export { CACHE_TAGS } from "./cache-tags";
+export { SITE_NAME } from "./site";
 export { ERROR_MESSAGES, SUCCESS_MESSAGES } from "./messages";
 export {
   ACCEPTED_VIDEO_EXTENSIONS,

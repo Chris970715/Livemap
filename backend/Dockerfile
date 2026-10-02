@@ -1,4 +1,4 @@
-# Huginn Backend — FastAPI + AI news pipeline
+# LiveMap Backend — FastAPI + AI news pipeline
 #
 # Sized for small hosts (Render free: 512MB RAM). The local bge-m3 model
 # (torch) is not installed; embeddings come from the Gemini API

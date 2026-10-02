@@ -4,7 +4,7 @@ import { enabledOAuthProviders } from "@/lib/auth/config";
 import { RegisterForm } from "./_components/register-form";
 
 export const metadata: Metadata = {
-  title: "Sign up | Huginn",
+  title: "Sign up",
 };
 
 interface RegisterPageProps {

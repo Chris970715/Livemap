@@ -211,7 +211,7 @@ def _article_to_feed_response(article: Article, event: Event) -> dict:
             pass
 
     # Derive source name from related sources
-    source_name = "Huginn AI"
+    source_name = "LiveMap AI"
     if related_sources:
         first_source = related_sources[0].get("sourceName", "")
         if first_source:

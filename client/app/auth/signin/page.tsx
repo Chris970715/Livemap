@@ -5,7 +5,7 @@ import { DEMO_USER } from "@/lib/auth/demo";
 import { SignInForm } from "./_components/sign-in-form";
 
 export const metadata: Metadata = {
-  title: "Log in | Huginn",
+  title: "Log in",
 };
 
 // Auth.js가 OAuth 실패 시 ?error=<type>로 돌려보냄 (pages.error)
