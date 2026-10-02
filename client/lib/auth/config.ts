@@ -9,7 +9,7 @@ import Kakao from "next-auth/providers/kakao";
 import prisma from "@/lib/prisma";
 import type { Role } from "@/lib/generated/prisma/client";
 
-// OAuth 공급자는 키가 설정된 경우에만 활성화 (데모 배포는 Credentials만 사용)
+// OAuth 공급자는 키가 설정된 경우에만 활성화 (키 없이 버튼을 누르면 에러 페이지로 이동하므로)
 const oauthProviders = [
   process.env.GOOGLE_CLIENT_ID &&
     Google({
@@ -27,6 +27,13 @@ const oauthProviders = [
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
     }),
 ].filter((provider) => !!provider);
+
+export type OAuthProviderId = "google" | "discord";
+
+/** OAuth buttons shown on the auth pages — only providers whose keys are configured */
+export const enabledOAuthProviders = (["google", "discord"] as const).filter(
+  (id) => !!process.env[`${id.toUpperCase()}_CLIENT_ID`]
+);
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -108,5 +115,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/auth/signin",
+    // OAuth 실패(취소, 다른 로그인 방식으로 가입된 이메일 등)도 로그인 페이지에서 안내
+    error: "/auth/signin",
   },
 });

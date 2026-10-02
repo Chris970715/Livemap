@@ -4,7 +4,12 @@ import { z } from "zod";
  * 로그인 폼 스키마
  */
 export const signInSchema = z.object({
-  email: z.string().min(1, "Please enter your email").email("Please enter a valid email"),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Please enter your email")
+    .email("Please enter a valid email"),
   password: z.string().min(1, "Please enter your password"),
 });
 
@@ -19,7 +24,12 @@ export const registerSchema = z
       .string()
       .min(1, "Please enter your name")
       .max(50, "Name must be 50 characters or fewer"),
-    email: z.string().min(1, "Please enter your email").email("Please enter a valid email"),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1, "Please enter your email")
+      .email("Please enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })

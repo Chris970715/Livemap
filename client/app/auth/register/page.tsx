@@ -1,8 +1,18 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 
-/**
- * 공개 데모 배포에서는 회원가입을 받지 않음 — 데모 계정 로그인으로 안내
- */
-export default function RegisterPage() {
-  redirect("/auth/signin");
+import { enabledOAuthProviders } from "@/lib/auth/config";
+import { RegisterForm } from "./_components/register-form";
+
+export const metadata: Metadata = {
+  title: "Sign up | Huginn",
+};
+
+interface RegisterPageProps {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}
+
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const { callbackUrl } = await searchParams;
+
+  return <RegisterForm callbackUrl={callbackUrl} oauthProviders={enabledOAuthProviders} />;
 }

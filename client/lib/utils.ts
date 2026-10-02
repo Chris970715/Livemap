@@ -34,3 +34,11 @@ export function getFeedHeadline(feed: FeedItem, lang: "ko" | "en"): string {
   if (lang === "en" && feed.articleEn?.headline) return feed.articleEn.headline;
   return feed.article?.headline || feed.title;
 }
+
+/**
+ * Appends ?callbackUrl=... so the post-login destination survives
+ * switching between the sign-in and sign-up pages
+ */
+export function withCallbackUrl(path: string, callbackUrl?: string): string {
+  return callbackUrl ? `${path}?callbackUrl=${encodeURIComponent(callbackUrl)}` : path;
+}

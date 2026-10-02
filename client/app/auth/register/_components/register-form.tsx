@@ -4,48 +4,42 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { OAuthButton } from "@/components/auth/oauth-button";
-import { signInWithCredentials } from "@/app/actions/auth";
+import { register as registerAction } from "@/app/actions/auth";
 import type { OAuthProviderId } from "@/lib/auth/config";
 import { withCallbackUrl } from "@/lib/utils";
-import { signInSchema, type SignInFormValues } from "@/lib/validations/auth";
+import { registerSchema, type RegisterFormValues } from "@/lib/validations/auth";
 
-interface SignInFormProps {
+interface RegisterFormProps {
   callbackUrl?: string;
-  errorMessage?: string;
-  defaultEmail: string;
-  defaultPassword: string;
   oauthProviders: OAuthProviderId[];
 }
 
-export function SignInForm({
-  callbackUrl,
-  errorMessage,
-  defaultEmail,
-  defaultPassword,
-  oauthProviders,
-}: SignInFormProps) {
-  const form = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
+export function RegisterForm({ callbackUrl, oauthProviders }: RegisterFormProps) {
+  const form = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
-      email: defaultEmail,
-      password: defaultPassword,
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
-  const onSubmit = async (data: SignInFormValues) => {
+  const onSubmit = async (data: RegisterFormValues) => {
     const formData = new FormData();
+    formData.append("name", data.name);
     formData.append("email", data.email);
     formData.append("password", data.password);
+    formData.append("confirmPassword", data.confirmPassword);
     if (callbackUrl) formData.append("callbackUrl", callbackUrl);
 
-    const result = await signInWithCredentials(formData);
+    const result = await registerAction(formData);
     if (result.data) {
       // 전체 페이지 이동 — 헤더의 useSession이 새 세션을 읽도록
       window.location.assign(result.data.redirectTo);
@@ -56,28 +50,12 @@ export function SignInForm({
 
   return (
     <main className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center p-4">
-      <Card className="relative w-full max-w-md">
-        <Link
-          href="/"
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="h-6 w-6" />
-          <span className="sr-only">Back to home</span>
-        </Link>
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Log in</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
+          <CardTitle className="text-2xl">Sign up</CardTitle>
+          <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {errorMessage && (
-            <p
-              role="alert"
-              className="rounded-md bg-destructive/10 px-3 py-2 text-center text-sm text-destructive"
-            >
-              {errorMessage}
-            </p>
-          )}
-
           {oauthProviders.length > 0 && (
             <>
               <div className="space-y-2">
@@ -99,6 +77,14 @@ export function SignInForm({
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" placeholder="Jane Doe" {...form.register("name")} />
+              {form.formState.errors.name && (
+                <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -119,22 +105,28 @@ export function SignInForm({
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm password</Label>
+              <Input id="confirmPassword" type="password" {...form.register("confirmPassword")} />
+              {form.formState.errors.confirmPassword && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Signing in..." : "Log in"}
+              {form.formState.isSubmitting ? "Creating account..." : "Sign up"}
             </Button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground">
-            Default account: {defaultEmail} / {defaultPassword}
-          </p>
-
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            Already have an account?{" "}
             <Link
-              href={withCallbackUrl("/auth/register", callbackUrl)}
+              href={withCallbackUrl("/auth/signin", callbackUrl)}
               className="underline underline-offset-4 hover:text-primary"
             >
-              Sign up
+              Log in
             </Link>
           </p>
         </CardContent>
